@@ -41,17 +41,26 @@ class Verbosity(enum.Enum):
 
 # ANSI escape codes for colors and styles.
 class Foreground:
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    MAGENTA = "\033[95m"
-    CYAN = "\033[96m"
-    WHITE = "\033[97m"
-    GREY = "\033[90m"
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    BRIGHT_BLACK = "\033[90m"
+    BRIGHT_RED = "\033[91m"
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+    BRIGHT_CYAN = "\033[96m"
+    BRIGHT_WHITE = "\033[97m"
     RESET = "\033[0m"
 
 class Background:
+    BLACK = "\033[40m"
     RED = "\033[41m"
     GREEN = "\033[42m"
     YELLOW = "\033[43m"
@@ -59,7 +68,14 @@ class Background:
     MAGENTA = "\033[45m"
     CYAN = "\033[46m"
     WHITE = "\033[47m"
-    GREY = "\033[40m"
+    BRIGHT_BLACK = "\033[100m"
+    BRIGHT_RED = "\033[101m"
+    BRIGHT_GREEN = "\033[102m"
+    BRIGHT_YELLOW = "\033[103m"
+    BRIGHT_BLUE = "\033[104m"
+    BRIGHT_MAGENTA = "\033[105m"
+    BRIGHT_CYAN = "\033[106m"
+    BRIGHT_WHITE = "\033[107m"
     RESET = "\033[0m"
 
 class Style:
@@ -298,17 +314,17 @@ class CLIProgress:
         if result.status == "PASS":
             status = "✓ PASS"
             if self.colors:
-                status = f"{Foreground.GREEN}{status}{Foreground.RESET}"
+                status = f"{Foreground.BRIGHT_GREEN}{status}{Foreground.RESET}"
             keyword_trace += f"{status}    {elapsed}"
         elif result.status == "SKIP":
             status = "→ SKIP"
             if self.colors:
-                status = f"{Foreground.GREY}{status}{Foreground.RESET}"
+                status = f"{Foreground.BRIGHT_YELLOW}{status}{Foreground.RESET}"
             keyword_trace += f"{status}    {elapsed}"
         elif result.status == "FAIL":
             status = "✗ FAIL"
             if self.colors:
-                status = f"{Foreground.RED}{status}{Foreground.RESET}"
+                status = f"{Foreground.BRIGHT_RED}{status}{Foreground.RESET}"
             keyword_trace += f"{status}    {elapsed}"
         else:
             keyword_trace += f"? {result.status}    {elapsed}"
@@ -335,6 +351,16 @@ class CLIProgress:
         # Remaining lines align without repeating the level
         for text_line in text_lines[1:]:
             formatted_lines.append(f"{indent}  {text_line}")
+
+        if self.colors:
+            if level == "FAIL":
+                formatted_lines = [f"{Foreground.BRIGHT_RED}{line}{Foreground.RESET}" for line in formatted_lines]
+            elif level == "WARN":
+                formatted_lines = [f"{Foreground.BRIGHT_YELLOW}{line}{Foreground.RESET}" for line in formatted_lines]
+            elif level == "INFO":
+                formatted_lines = [f"{Foreground.BRIGHT_BLACK}{line}{Foreground.RESET}" for line in formatted_lines]
+            elif level == "DEBUG" or level == "TRACE":
+                formatted_lines = [f"{Foreground.WHITE}{line}{Foreground.RESET}" for line in formatted_lines]
 
         self.current_test_trace += "\n".join(formatted_lines) + "\n"
 
