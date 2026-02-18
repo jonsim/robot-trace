@@ -12,22 +12,75 @@ you don't need to open the HTML files directly to debug failing tests.
 - Provides a full, intuitive trace of any failing tests.
 
 ## Usage
-The listener should be passed to Robot's `--listener` argument. It's recommended
-to also call with: `--console=quiet` to avoid Robot's default console markers
-getting interleaved.
+The listener supports three different usage models:
 
-Thus, a reasonable command line would be:
+### 1. As a separate command-line tool
+This is the easiest and recommended usage model.
+
+#### Installation
+```sh
+pip install robotframework-cliprogress
+```
+
+#### Usage
+```sh
+robot-cli path/to/tests
+```
+
+#### Details
+You don't need to remember any extra arguments to pass to Robot - the runner
+automatically passes the correct arguments to Robot and bases its own command
+line from the arguments you pass to Robot. This gives a drop-in replacement
+for any existing `robot` command lines.
+
+The `robot-cli` command is a very thin wrapper on top of `robot` - it passes all
+arguments it receives straight through, while adding additional arguments to
+ensure the listener output works properly.
+
+
+### 2. As a module-based Robot listener
+If you want to keep using `robot` directly, you can use the listener as a
+module.
+
+#### Installation
+```sh
+pip install robotframework-cliprogress
+```
+
+#### Usage
+When calling the listener directly, it's recommended to also call with:
+`--console=quiet` to avoid Robot's default console markers getting interleaved.
+```sh
+robot --listener CLIProgress --console=quiet path/to/tests
+```
+
+### 3. As a single-file Robot listener
+If you don't want to install the package, the listener is implemented as a
+single file which you can download separately. This is useful for minimal setups
+or for embedding the listener in your own projects, but you lose the ability to
+update via `pip`.
+
+#### Installation
+Copy `CLIProgress/CLIProgress.py` to your project directory.
+
+#### Usage
+Usage is broadly similar to option 2 - pass the file to Robot's `--listener`
+argument, and also pass `--console=quiet` to avoid Robot's default console
+markers getting interleaved.
 ```sh
 robot --listener CLIProgress.py --console=quiet path/to/tests
 ```
 
-You may also consider calling with:
+### Related options
+You may also consider calling `robot` or `robot-cli` with:
 - `--maxerrorlines=10000` to avoid truncating all but the longest error
   messages.
+- `--maxassignlength=10000` to avoid truncating all but the longest variables.
+
 
 ## Example Output
 ```sh
-$ robot --listener CLIProgress.py --console=quiet testcases
+$ robot-cli testcases
 TEST FAILED: Test Case 5 - Fast
 ═══════════════════════════════
 ▶ BuiltIn.Log('Starting Test Case 5')
