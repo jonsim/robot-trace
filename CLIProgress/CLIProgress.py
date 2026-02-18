@@ -39,6 +39,40 @@ class Verbosity(enum.Enum):
         return cls.NORMAL
 
 
+# ANSI escape codes for colors and styles.
+class Foreground:
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
+    CYAN = "\033[96m"
+    WHITE = "\033[97m"
+    GREY = "\033[90m"
+    RESET = "\033[0m"
+
+class Background:
+    RED = "\033[41m"
+    GREEN = "\033[42m"
+    YELLOW = "\033[43m"
+    BLUE = "\033[44m"
+    MAGENTA = "\033[45m"
+    CYAN = "\033[46m"
+    WHITE = "\033[47m"
+    GREY = "\033[40m"
+    RESET = "\033[0m"
+
+class Style:
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    ITALIC = "\033[3m"
+    UNDERLINE = "\033[4m"
+    BLINK = "\033[5m"
+    INVERT = "\033[7m"
+    HIDDEN = "\033[8m"
+    RESET = "\033[0m"
+
+
 class CLIProgress:
     ROBOT_LISTENER_API_VERSION = 3
 
@@ -216,6 +250,8 @@ class CLIProgress:
         if result.status == "FAIL":
             fail_line = f"TEST FAILED: {test.name}"
             underline = "═" * len(fail_line)
+            if self.colors:
+                fail_line = f"{Foreground.RED}TEST FAILED{Foreground.RESET}: {test.name}"
             self._print_trace(f"{fail_line}\n{underline}\n{trace}")
 
     # ------------------------------------------------------------------ keyword
@@ -245,11 +281,20 @@ class CLIProgress:
 
         keyword_trace = self._indent() + "  "
         if result.status == "PASS":
-            keyword_trace += f"✓ PASS    {elapsed}"
+            status = "✓ PASS"
+            if self.colors:
+                status = f"{Foreground.GREEN}{status}{Foreground.RESET}"
+            keyword_trace += f"{status}    {elapsed}"
         elif result.status == "SKIP":
-            keyword_trace += f"→ SKIP    {elapsed}"
+            status = "→ SKIP"
+            if self.colors:
+                status = f"{Foreground.GREY}{status}{Foreground.RESET}"
+            keyword_trace += f"{status}    {elapsed}"
         elif result.status == "FAIL":
-            keyword_trace += f"✗ FAIL    {elapsed}"
+            status = "✗ FAIL"
+            if self.colors:
+                status = f"{Foreground.RED}{status}{Foreground.RESET}"
+            keyword_trace += f"{status}    {elapsed}"
         else:
             keyword_trace += f"? {result.status}    {elapsed}"
 
