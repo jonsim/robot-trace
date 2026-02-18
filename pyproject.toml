@@ -1,0 +1,13 @@
+[project]
+name = "robotframework-cliprogress"
+version = "0.1.0"
+description = "CLI progress listener for Robot Framework"
+authors = [{ name = "Jonathan Simmonds", email = "jon@jonsim.com" }]
+dependencies = []
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
