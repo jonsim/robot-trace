@@ -107,7 +107,8 @@ class CLIProgress:
         self.completed_tests = 0
         self.current_test_start_time = None
         self.current_test_trace = ''
-        self.current_test_keyword_depth = 0
+        self.keyword_depth = 0
+        self.keyword_stack = []
 
         # On Windows, import colorama if we're coloring output.
         if self.colors and sys.platform == "win32":
@@ -184,7 +185,13 @@ class CLIProgress:
             return "%2ds" % (s)
 
     def _indent(self):
-        return "  " * min(self.current_test_keyword_depth, 20)
+        return "  " * min(self.keyword_depth, 20)
+
+    def _flush_keyword_stack(self):
+        """Flush any pending keyword headers to the trace and clear the stack."""
+        for trace_line in self.keyword_stack:
+            self.current_test_trace += trace_line + "\n"
+        self.keyword_stack.clear()
 
     # ------------------------------------------------------------------ suite
 
@@ -206,7 +213,8 @@ class CLIProgress:
         self._record_run_start()
         self.started_tests += 1
         self.current_test_trace = ''
-        self.current_test_keyword_depth = 0
+        self.keyword_depth = 0
+        self.keyword_stack = []
         self.current_test_start_time = time.time()
 
         elapsed_time = time.time() - self.run_start
@@ -227,7 +235,8 @@ class CLIProgress:
     def end_test(self, test, result):
         start = self.current_test_start_time
         trace = self.current_test_trace
-        self.current_test_keyword_depth = 0
+        self.keyword_depth = 0
+        self.keyword_stack = []
         self.current_test_start_time = None
         self.current_test_trace = ""
         if result.not_run:
@@ -263,17 +272,23 @@ class CLIProgress:
         argstr = ", ".join(repr(a) for a in args)
         kwstr = f"{lib}.{name}" if lib else name
         prefix = self._indent()
-        keyword_trace = f"{prefix}▶ {kwstr}({argstr})"
-        self.current_test_trace += keyword_trace + "\n"
-        self.current_test_keyword_depth += 1
+        trace_line = f"{prefix}▶ {kwstr}({argstr})"
+        self.keyword_stack.append(trace_line)
+        self.keyword_depth += 1
 
         self._write_status_line(2, f"[{kwstr}]  {argstr}")
 
     def end_keyword(self, keyword, result):
-        self.current_test_keyword_depth -= 1
+        self.keyword_depth -= 1
         if result.status == "NOT RUN":
+            # Discard; the header was never flushed so it just disappears.
+            self.keyword_stack.pop()
             self._write_status_line(2, "")
             return
+
+        # Keyword ran — flush any pending ancestor headers (and this one)
+        # so the hierarchy appears in the trace.
+        self._flush_keyword_stack()
 
         elapsed_ms = getattr(result, "elapsedtime", None)
 
@@ -307,6 +322,9 @@ class CLIProgress:
     def log_message(self, message):
         level = getattr(message, "level", None) or "UNKNOWN"
         text = getattr(message, "message", None) or ""
+
+        # Flush keyword headers so they appear above the log line.
+        self._flush_keyword_stack()
 
         indent = self._indent()
         level_initial = level[0].upper()
