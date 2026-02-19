@@ -5,6 +5,9 @@ description = "CLI progress listener for Robot Framework"
 authors = [{ name = "Jonathan Simmonds", email = "jon@jonsim.com" }]
 dependencies = []
 
+[project.optional-dependencies]
+dev = ["robotframework"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
