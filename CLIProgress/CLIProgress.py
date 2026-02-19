@@ -112,6 +112,45 @@ class ANSI:
         RESET = "\033[0m"
 
 
+class TraceStack:
+    def __init__(self):
+        self._trace: str = ""
+        self._depth: int = 0
+        self._stack: list[str] = []
+
+    def clear(self):
+        self._trace = ""
+        self._depth = 0
+        self._stack.clear()
+
+    @property
+    def _indent(self) -> str:
+        return "  " * min(self._depth, 20)
+
+    @property
+    def trace(self) -> str:
+        return self._trace
+
+    def push_keyword(self, keyword_line: str):
+        self._stack.append(self._indent + keyword_line)
+        self._depth += 1
+
+    def pop_keyword(self):
+        self._stack.pop()
+        self._depth -= 1
+
+    def append_trace(self, trace_line: str):
+        self._trace += self._indent + trace_line + "\n"
+
+    def flush(self, decrement_depth: bool = True):
+        """Flush any pending keyword headers to the trace and clear the stack."""
+        if decrement_depth:
+            self._depth -= 1
+        for trace_line in self._stack:
+            self._trace += trace_line + "\n"
+        self._stack.clear()
+
+
 class CLIProgress:
     ROBOT_LISTENER_API_VERSION = 3
 
@@ -150,9 +189,7 @@ class CLIProgress:
         self.failed_tests = 0
         self.completed_tests = 0
         self.current_test_start_time = None
-        self.current_test_trace = ""
-        self.keyword_depth = 0
-        self.keyword_stack = []
+        self.trace_stack = TraceStack()
 
         # On Windows, import colorama if we're coloring output.
         if self.colors and sys.platform == "win32":
@@ -230,15 +267,6 @@ class CLIProgress:
         else:
             return f"{s:2d}s"
 
-    def _indent(self):
-        return "  " * min(self.keyword_depth, 20)
-
-    def _flush_keyword_stack(self):
-        """Flush any pending keyword headers to the trace and clear the stack."""
-        for trace_line in self.keyword_stack:
-            self.current_test_trace += trace_line + "\n"
-        self.keyword_stack.clear()
-
     # ------------------------------------------------------------------ suite
 
     def start_suite(self, suite, result):
@@ -260,9 +288,7 @@ class CLIProgress:
     def start_test(self, test, result):
         self._record_run_start()
         self.started_tests += 1
-        self.current_test_trace = ""
-        self.keyword_depth = 0
-        self.keyword_stack = []
+        self.trace_stack.clear()
         self.current_test_start_time = time.time()
 
         elapsed_time = time.time() - self.run_start
@@ -281,11 +307,9 @@ class CLIProgress:
 
     def end_test(self, test, result):
         # start = self.current_test_start_time
-        trace = self.current_test_trace
-        self.keyword_depth = 0
-        self.keyword_stack = []
+        trace = self.trace_stack.trace
+        self.trace_stack.clear()
         self.current_test_start_time = None
-        self.current_test_trace = ""
         if result.not_run:
             self._write_status_line(1, "")
             return
@@ -322,24 +346,21 @@ class CLIProgress:
         args = getattr(result, "args", None) or []
         argstr = ", ".join(repr(a) for a in args)
         kwstr = f"{lib}.{name}" if lib else name
-        prefix = self._indent()
-        trace_line = f"{prefix}▶ {kwstr}({argstr})"
-        self.keyword_stack.append(trace_line)
-        self.keyword_depth += 1
+        trace_line = f"▶ {kwstr}({argstr})"
+        self.trace_stack.push_keyword(trace_line)
 
         self._write_status_line(2, f"[{kwstr}]  {argstr}")
 
     def end_keyword(self, keyword, result):
-        self.keyword_depth -= 1
         if result.status == "NOT RUN":
             # Discard; the header was never flushed so it just disappears.
-            self.keyword_stack.pop()
+            self.trace_stack.pop_keyword()
             self._write_status_line(2, "")
             return
 
-        # Keyword ran — flush any pending ancestor headers (and this one)
+        # Keyword ran - flush any pending ancestor headers (and this one)
         # so the hierarchy appears in the trace.
-        self._flush_keyword_stack()
+        self.trace_stack.flush()
 
         elapsed_ms = getattr(result, "elapsedtime", None)
 
@@ -347,7 +368,7 @@ class CLIProgress:
             self._format_time(elapsed_ms / 1000.0) if elapsed_ms is not None else "?s"
         )
 
-        keyword_trace = self._indent() + "  "
+        keyword_trace = "  "
         if result.status == "PASS":
             status = "✓ PASS"
             if self.colors:
@@ -366,7 +387,7 @@ class CLIProgress:
         else:
             keyword_trace += f"? {result.status}    {elapsed}"
 
-        self.current_test_trace += keyword_trace + "\n"
+        self.trace_stack.append_trace(keyword_trace)
 
         self._write_status_line(2, "")
 
@@ -377,17 +398,16 @@ class CLIProgress:
         text = getattr(message, "message", None) or ""
 
         # Flush keyword headers so they appear above the log line.
-        self._flush_keyword_stack()
+        self.trace_stack.flush(decrement_depth=False)
 
-        indent = self._indent()
         level_initial = level[0].upper()
         text_lines = text.splitlines()
         formatted_lines = []
         # First line gets level initial
-        formatted_lines.append(f"{indent}{level_initial} {text_lines[0]}")
+        formatted_lines.append(f"{level_initial} {text_lines[0]}")
         # Remaining lines align without repeating the level
         for text_line in text_lines[1:]:
-            formatted_lines.append(f"{indent}  {text_line}")
+            formatted_lines.append(f"  {text_line}")
 
         if self.colors:
             if level == "FAIL":
@@ -411,7 +431,7 @@ class CLIProgress:
                     for line in formatted_lines
                 ]
 
-        self.current_test_trace += "\n".join(formatted_lines) + "\n"
+        self.trace_stack.append_trace("\n".join(formatted_lines))
 
     # ------------------------------------------------------------------ close
 
