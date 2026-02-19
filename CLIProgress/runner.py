@@ -28,4 +28,7 @@ def main():
         *args,
     ]
 
-    sys.exit(subprocess.call(cmd))
+    try:
+        sys.exit(subprocess.call(cmd))
+    except KeyboardInterrupt:
+        sys.exit(130)
