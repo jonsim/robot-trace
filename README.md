@@ -49,9 +49,9 @@ pip install robotframework-cliprogress
 
 #### Usage
 When calling the listener directly, it's recommended to also call with:
-`--console=quiet` to avoid Robot's default console markers getting interleaved.
+`--console=none` to avoid Robot's default console markers getting interleaved.
 ```sh
-robot --listener CLIProgress --console=quiet path/to/tests
+robot --listener CLIProgress --console=none path/to/tests
 ```
 
 ### 3. As a single-file Robot listener
@@ -65,10 +65,10 @@ Copy `CLIProgress/CLIProgress.py` to your project directory.
 
 #### Usage
 Usage is broadly similar to option 2 - pass the file to Robot's `--listener`
-argument, and also pass `--console=quiet` to avoid Robot's default console
+argument, and also pass `--console=none` to avoid Robot's default console
 markers getting interleaved.
 ```sh
-robot --listener CLIProgress.py --console=quiet path/to/tests
+robot --listener CLIProgress.py --console=none path/to/tests
 ```
 
 ### Related options
@@ -81,22 +81,26 @@ You may also consider calling `robot` or `robot-cli` with:
 ## Example Output
 ```sh
 $ robot-cli testcases
-TEST FAILED: Test Case 5 - Fast
-═══════════════════════════════
-▶ BuiltIn.Log('Starting Test Case 5')
-  I Starting Test Case 5
-  ✓ PASS     0s
-▶ BuiltIn.Create List('1', '2')
-  I ${list} = ['1', '2']
-  ✓ PASS     0s
-▶ Collections.Append To List('${list}', '4')
-  ✓ PASS     0s
-▶ BuiltIn.Length Should Be('${list}', '4')
-  I Length is 3.
-  F Length of '['1', '2', '4']' should be 4 but is 3.
+TEST FAILED: Nested Keywords.Nested Failing Test Case
+═════════════════════════════════════════════════════
+▶ Level Two Keyword('should_fail=${True}')
+  ▶ BuiltIn.Log('In the level two keyword')
+    I In the level two keyword
+    ✓ PASS     0s
+  ▶ Level Three Keyword()
+    ▶ BuiltIn.Log('In the level three keyword')
+      I In the level three keyword
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ Failing Keyword()
+    ▶ BuiltIn.Log('In the failing keyword')
+      I In the failing keyword
+      ✓ PASS     0s
+    ▶ BuiltIn.Fail('This keyword failed')
+      F This keyword failed
+      ✗ FAIL     0s
+    ✗ FAIL     0s
   ✗ FAIL     0s
-▶ BuiltIn.Log('Test Case 5 completed.')
-  → SKIP     0s
 
 ┌──────────────────────────────────────────────────────────────────────┐
 │ [SUITE] Suite 2                                                      │

@@ -6,8 +6,9 @@
 #   robot --listener CLIProgress.py path/to/tests
 #
 # It's recommended to also call with:
-# --console=quiet to avoid Robot's default console markers getting interleaved.
+# --console=none to avoid Robot's default console markers getting interleaved.
 # --maxerrorlines=10000 to avoid truncating all but the longest error messages.
+# --maxmaxassignlength=10000 to avoid truncating all but the longest variables.
 #
 import enum
 import functools
@@ -155,7 +156,7 @@ class CLIProgress:
     ROBOT_LISTENER_API_VERSION = 3
 
     def __init__(
-        self, verbosity: str = "NORMAL", colors: str = "AUTO", width: int = 78
+        self, verbosity: str = "NORMAL", colors: str = "AUTO", width: int = 120
     ):
         # Parse arguments.
         verbosity = verbosity.upper()
@@ -209,11 +210,6 @@ class CLIProgress:
 
     def _writeln(self, text=""):
         sys.stdout.write(text + "\n")
-        sys.stdout.flush()
-
-    def _overwriteln(self, text: str = ""):
-        # Pad to terminal width to clear previous line
-        sys.stdout.write(f"{text:<{self.terminal_width}}\r")
         sys.stdout.flush()
 
     def _draw_status_box(self):
@@ -278,13 +274,10 @@ class CLIProgress:
         self._record_run_start()
         self.suite_trace_stack.clear()
 
-        name = (
-            getattr(result, "name", None) or getattr(suite, "name", None) or "<suite>"
-        )
         if self.suite_total_tests is None:
             self.suite_total_tests = int(getattr(suite, "test_count", 0))
 
-        self._write_status_line(0, f"[SUITE] {name}")
+        self._write_status_line(0, f"[SUITE] {suite.full_name}")
 
     def end_suite(self, suite, result):
         trace = self.suite_trace_stack.trace
@@ -293,11 +286,11 @@ class CLIProgress:
         self._write_status_line(0, "")
 
         if result.status == "FAIL" and trace:
-            fail_line = f"SUITE FAILED: {suite.name}"
+            fail_line = f"SUITE FAILED: {suite.full_name}"
             underline = "═" * len(fail_line)
             if self.colors:
                 fail_line = (
-                    f"{ANSI.Fore.RED}SUITE FAILED{ANSI.Fore.RESET}: {suite.name}"
+                    f"{ANSI.Fore.RED}SUITE FAILED{ANSI.Fore.RESET}: {suite.full_name}"
                 )
             self._print_trace(f"{fail_line}\n{underline}\n{trace}")
 
@@ -346,10 +339,14 @@ class CLIProgress:
         self._write_status_line(1, "")
 
         if result.status == "FAIL":
-            fail_line = f"TEST FAILED: {test.name}"
+            fail_line = f"TEST FAILED: {test.full_name}"
             underline = "═" * len(fail_line)
             if self.colors:
-                fail_line = f"{ANSI.Fore.RED}TEST FAILED{ANSI.Fore.RESET}: {test.name}"
+                fail_line = (
+                    f"{ANSI.Fore.RED}TEST FAILED{ANSI.Fore.RESET}: {test.full_name}"
+                )
+            if not trace:
+                trace = result.message + "\n"
             self._print_trace(f"{fail_line}\n{underline}\n{trace}")
 
     # ------------------------------------------------------------------ keyword
@@ -368,7 +365,7 @@ class CLIProgress:
         trace_line = f"▶ {kwstr}({argstr})"
         stack.push_keyword(trace_line)
 
-        self._write_status_line(2, f"[{kwstr}]  {argstr}")
+        self._write_status_line(2, f"[{name}]  {argstr}")
 
     def end_keyword(self, keyword, result):
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack

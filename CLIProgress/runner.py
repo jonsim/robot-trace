@@ -55,7 +55,7 @@ def main():
         listener += f":width={console_width}"
     cmd = [
         "robot",
-        "--console=quiet",
+        "--console=none",
         "--listener",
         listener,
         *args,
