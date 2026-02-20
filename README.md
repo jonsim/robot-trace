@@ -114,8 +114,9 @@ TEST FAILED: Nested Keywords.Nested Failing Test Case
 - Robot Framework 4.0+
 
 ## Contributing
-Contributions, bugs, and feature requests are welcome! Please submit a pull
-request or open an issue for bugs and requests.
+Contributions, bugs, and feature requests are welcome! Please see the
+[Contributing Guide](CONTRIBUTING.md) for details on how to build the project
+locally and submit changes.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file
