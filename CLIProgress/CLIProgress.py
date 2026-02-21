@@ -201,6 +201,57 @@ class TestStatistics:
         )
 
 
+class TestTimings:
+    def __init__(self):
+        self.run_start_time: float | None = None
+        self.current_test_start_time: float | None = None
+
+    def _record_run_start(self):
+        if self.run_start_time is None:
+            self.run_start_time = time.time()
+
+    def start_suite(self):
+        self._record_run_start()
+
+    def start_test(self):
+        self._record_run_start()
+        self.current_test_start_time = time.time()
+
+    def end_test(self):
+        self.current_test_start_time = None
+
+    @staticmethod
+    def format_time(seconds: float | int | None) -> str:
+        if seconds is None:
+            return "unknown"
+        seconds = int(round(seconds))
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        if h:
+            return f"{h:2d}h {m:2d}m {s:2d}s"
+        elif m:
+            return f"{m:2d}m {s:2d}s"
+        else:
+            return f"{s:2d}s"
+
+    def get_elapsed_time(self) -> float:
+        if self.run_start_time is None:
+            return 0.0
+        return time.time() - self.run_start_time
+
+    def format_elapsed_time(self) -> str:
+        return self.format_time(self.get_elapsed_time())
+
+    def format_eta(self, stats: TestStatistics) -> str:
+        if stats.completed_tests and stats.top_level_test_count:
+            elapsed_time = self.get_elapsed_time()
+            avg_test_time = elapsed_time / stats.completed_tests
+            remaining_tests = stats.top_level_test_count - stats.completed_tests
+            eta_time = avg_test_time * remaining_tests
+            return self.format_time(eta_time)
+        return "unknown"
+
+
 class CLIProgress:
     ROBOT_LISTENER_API_VERSION = 3
 
@@ -244,9 +295,8 @@ class CLIProgress:
             shutil.get_terminal_size(fallback=(width, 40)).columns, width
         )
         self.status_lines = ["", "", ""]
-        self.run_start_time: float | None = None
-        self.current_test_start_time: float | None = None
         self.stats = TestStatistics()
+        self.timings = TestTimings()
         self.test_trace_stack = TraceStack()
         self.suite_trace_stack = TraceStack()
 
@@ -263,7 +313,7 @@ class CLIProgress:
 
     @property
     def in_test(self) -> bool:
-        return self.current_test_start_time is not None
+        return self.timings.current_test_start_time is not None
 
     def _writeln(self, text=""):
         sys.stdout.write(text + "\n")
@@ -318,26 +368,11 @@ class CLIProgress:
         # Finally redraw the status box with the current test status.
         self._draw_status_box()
 
-    def _record_run_start(self):
-        if self.run_start_time is None:
-            self.run_start_time = time.time()
-
-    def _format_time(self, seconds):
-        seconds = int(round(seconds))
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        if h:
-            return f"{h:2d}h {m:2d}m {s:2d}s"
-        elif m:
-            return f"{m:2d}m {s:2d}s"
-        else:
-            return f"{s:2d}s"
-
     # ------------------------------------------------------------------ suite
 
     def start_suite(self, suite, result):
-        self._record_run_start()
         self.stats.start_suite(suite)
+        self.timings.start_suite()
         self.suite_trace_stack.clear()
 
         self._write_status_line(
@@ -362,32 +397,22 @@ class CLIProgress:
     # ------------------------------------------------------------------ test
 
     def start_test(self, test, result):
-        self._record_run_start()
         self.stats.start_test()
+        self.timings.start_test()
         self.test_trace_stack.clear()
-        self.current_test_start_time = time.time()
 
-        elapsed_time = time.time() - self.run_start_time
-        if self.stats.completed_tests:
-            avg_test_time = elapsed_time / self.stats.completed_tests
-            remaining_tests = (
-                self.stats.top_level_test_count - self.stats.completed_tests
-            )
-            eta_time = avg_test_time * remaining_tests
-        else:
-            eta_time = None
-        eta_str = self._format_time(eta_time) if eta_time else "unknown"
         self._write_status_line(
             1,
-            f"[TEST {self.stats.format_test_progress()}] {test.name}"
-            f"    (elapsed {self._format_time(elapsed_time)}, ETA {eta_str})",
+            f"[TEST {self.stats.format_test_progress()}] {test.name}    "
+            f"(elapsed {self.timings.format_elapsed_time()}, "
+            f"ETA {self.timings.format_eta(self.stats)})",
         )
 
     def end_test(self, test, result):
-        # start = self.current_test_start_time
+        # start = self.timings.current_test_start_time
         trace = self.test_trace_stack.trace
         self.test_trace_stack.clear()
-        self.current_test_start_time = None
+        self.timings.end_test()
         if result.not_run:
             self._write_status_line(1, "")
             return
@@ -443,7 +468,9 @@ class CLIProgress:
         elapsed_ms = getattr(result, "elapsedtime", None)
 
         elapsed = (
-            self._format_time(elapsed_ms / 1000.0) if elapsed_ms is not None else "?s"
+            TestTimings.format_time(elapsed_ms / 1000.0)
+            if elapsed_ms is not None
+            else "?s"
         )
 
         keyword_trace = "  "
@@ -520,6 +547,9 @@ class CLIProgress:
         if self.verbosity >= Verbosity.NORMAL:
             self._writeln("RUN COMPLETE: " + self.stats.format_run_results())
 
-        if self.run_start_time is not None and self.verbosity >= Verbosity.NORMAL:
-            elapsed_str = self._format_time(time.time() - self.run_start_time)
+        if (
+            self.timings.run_start_time is not None
+            and self.verbosity >= Verbosity.NORMAL
+        ):
+            elapsed_str = self.timings.format_elapsed_time()
             self._writeln(f"Total elapsed: {elapsed_str}.")
