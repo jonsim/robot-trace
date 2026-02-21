@@ -342,9 +342,25 @@ class CLIProgress:
         self.status_stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.HOME)
         self.status_stream.flush()
 
-    def _write_status_line(self, line_no: int, text: str):
+    def _write_status_line(
+        self, line_no: int, left_text: str = "", right_text: str = ""
+    ):
         if not self.status_stream:
             return
+        # Format the left and right text into a single line. Right text takes
+        # priority. Truncate left text with '...' if necessary.
+        text_width = self.terminal_width - 4
+        right_len = len(right_text)
+        max_left = text_width - right_len - 1 if right_len > 0 else text_width
+        max_left = max(0, max_left)
+        if len(left_text) > max_left:
+            if max_left >= 3:
+                left_text = left_text[: max_left - 3] + "..."
+            else:
+                left_text = left_text[:max_left]
+        padding = max(0, text_width - len(left_text) - right_len)
+        text = f"{left_text}{' ' * padding}{right_text}"
+
         # Move cursor to the line inside the box and write the text.
         # For line 0, we want to move up 3 lines (to the first empty line in the box).
         # For line 1, we want to move up 2 lines.
@@ -353,8 +369,7 @@ class CLIProgress:
         self.status_lines[line_no] = text
         line_offset = 3 - line_no
         self.status_stream.write(ANSI.Cursor.UP(line_offset))
-        tw = self.terminal_width - 4
-        self.status_stream.write(ANSI.Cursor.HOME + f"│ {text:<{tw}.{tw}} │")
+        self.status_stream.write(ANSI.Cursor.HOME + f"│ {text} │")
         # Move cursor back down to the bottom of the box.
         self.status_stream.write(ANSI.Cursor.DOWN(line_offset))
         self.status_stream.flush()
@@ -383,7 +398,7 @@ class CLIProgress:
         trace = self.suite_trace_stack.trace
         self.suite_trace_stack.clear()
 
-        self._write_status_line(0, "")
+        self._write_status_line(0)
 
         if result.status == "FAIL" and trace:
             fail_line = f"SUITE FAILED: {suite.full_name}"
@@ -403,26 +418,19 @@ class CLIProgress:
 
         self._write_status_line(
             1,
-            f"[TEST {self.stats.format_test_progress()}] {test.name}    "
+            f"[TEST {self.stats.format_test_progress()}] {test.name}",
             f"(elapsed {self.timings.format_elapsed_time()}, "
             f"ETA {self.timings.format_eta(self.stats)})",
         )
 
     def end_test(self, test, result):
-        # start = self.timings.current_test_start_time
         trace = self.test_trace_stack.trace
         self.test_trace_stack.clear()
-        self.timings.end_test()
-        if result.not_run:
-            self._write_status_line(1, "")
-            return
-
         self.stats.end_test(result)
-
-        # end = time.time()
-        # elapsed = end - start  # retained for potential future use
-
-        self._write_status_line(1, "")
+        self.timings.end_test()
+        self._write_status_line(1)
+        if result.not_run:
+            return
 
         if result.status == "FAIL":
             fail_line = f"TEST FAILED: {test.full_name}"
@@ -458,7 +466,7 @@ class CLIProgress:
         if result.status == "NOT RUN":
             # Discard; the header was never flushed so it just disappears.
             stack.pop_keyword()
-            self._write_status_line(2, "")
+            self._write_status_line(2)
             return
 
         # Keyword ran - flush any pending ancestor headers (and this one)
@@ -494,7 +502,7 @@ class CLIProgress:
 
         stack.append_trace(keyword_trace)
 
-        self._write_status_line(2, "")
+        self._write_status_line(2)
 
     # ------------------------------------------------------------------ logging
 
