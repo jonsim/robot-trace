@@ -6,7 +6,7 @@ authors = [{ name = "Jonathan Simmonds", email = "jon@jonsim.com" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["robotframework", "pre-commit"]
+dev = ["robotframework", "pre-commit", "coverage"]
 
 [build-system]
 requires = ["setuptools>=64"]

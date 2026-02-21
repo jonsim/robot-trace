@@ -31,7 +31,7 @@ Install the git hooks to run automatically before every commit:
 pre-commit install
 ```
 
-### 5. Running the CLI Locally
+### 5. Running locally
 After installing in editable mode, you can test your changes by running the CLI
 against the sample test cases provided in the `testcases/` folder:
 ```sh
@@ -42,6 +42,19 @@ Alternatively, try running it directly as a module:
 ```sh
 robot --listener CLIProgress --console=none testcases
 ```
+
+### 6. Running tests
+To run the unit tests:
+```sh
+python -m unittest discover tests/unit
+```
+
+To run the unit tests and view the coverage report:
+```sh
+coverage run -m unittest discover tests/unit
+coverage report -m
+```
+
 
 ## Submitting Changes
 1. Make your changes in a new branch.
