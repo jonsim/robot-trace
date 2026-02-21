@@ -637,7 +637,7 @@ class CLIProgress:
     def close(self):
         self._clear_status_box()
 
-        if self.verbosity >= Verbosity.NORMAL:
+        if self.verbosity >= Verbosity.QUIET:
             self._writeln("RUN COMPLETE: " + self.stats.format_run_results())
 
         if (

@@ -34,11 +34,12 @@ def main():
     # arguments are:
     # - --consolestatus <value>
     # - --verbose
+    # - --quiet
     robot_args = []
     console_colors = None
     console_width = None
     console_status = None
-    verbose = False
+    verbosity = None
 
     arg_iter = iter(args)
     for arg in arg_iter:
@@ -78,10 +79,12 @@ def main():
         elif name == "--consolestatus":
             console_status = value
         elif name == "--verbose":
-            verbose = True
+            verbosity = "DEBUG"
+        elif name == "--quiet":
+            verbosity = "QUIET"
 
         # Reconstruct robot_args, omitting our custom arguments.
-        if name not in {"--consolestatus", "--verbose"}:
+        if name not in {"--consolestatus", "--verbose", "--quiet"}:
             robot_args.append(arg)
             if consumed_next and value is not None:
                 robot_args.append(value)
@@ -94,8 +97,8 @@ def main():
         listener += f":width={console_width}"
     if console_status is not None:
         listener += f":console_status={console_status}"
-    if verbose:
-        listener += ":verbosity=DEBUG"
+    if verbosity is not None:
+        listener += f":verbosity={verbosity}"
     cmd = [
         "robot",
         "--console=none",
