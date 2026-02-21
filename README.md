@@ -47,8 +47,9 @@ hyphenation) before passing the command line to Robot:
   failing tests are printed. Passing tests that raise warnings or errors are
   not printed.
 - `--consoleprogress <value>`: Controls where the progress box is printed.
-  Valid values are `stdout`, `stderr`, `none` (to suppress it). Defaults to
-  `stdout`.
+  Valid values are `AUTO`, `STDOUT`, `STDERR`, `NONE` (to suppress it). Defaults
+  to `AUTO`, which will print to `stdout` or `stderr` if they haven't been
+  redirected, or suppress it otherwise.
 
 
 ### 2. As a module-based Robot listener
@@ -77,7 +78,9 @@ The listener supports the following arguments:
   colorized. Valid values are `AUTO`, `ON`, `ANSI`, `OFF`. Values behave the same
   as Robot's `--consolecolors` argument. Defaults to `AUTO`.
 - `console_progress=<value>`: Controls where the progress box is printed. Valid
-  values are `stdout`, `stderr`, `none` (to suppress it). Defaults to `stdout`.
+  values are `AUTO`, `STDOUT`, `STDERR`, `NONE` (to suppress it). Defaults to
+  `AUTO`, which will print to `stdout` or `stderr` if they haven't been
+  redirected, or suppress it otherwise.
 - `width=<value>`: Controls the width of the progress box. Defaults to `120`.
 
 

@@ -291,7 +291,7 @@ class CLIProgress:
         self,
         verbosity: str = "NORMAL",
         colors: str = "AUTO",
-        console_progress: str = "STDOUT",
+        console_progress: str = "AUTO",
         width: int = 120,
     ):
         # Parse verbosity argument.
@@ -315,7 +315,14 @@ class CLIProgress:
                 self.colors = False
         # Parse console_progress argument.
         console_progress = console_progress.upper()
-        if console_progress == "STDOUT":
+        if console_progress == "AUTO":
+            if sys.stdout.isatty():
+                self.progress_stream = sys.stdout
+            elif sys.stderr.isatty():
+                self.progress_stream = sys.stderr
+            else:
+                self.progress_stream = None
+        elif console_progress == "STDOUT":
             self.progress_stream = sys.stdout
         elif console_progress == "STDERR":
             self.progress_stream = sys.stderr
