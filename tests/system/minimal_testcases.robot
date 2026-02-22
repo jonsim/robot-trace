@@ -5,6 +5,7 @@ Library           OperatingSystem
 Library           String
 Resource          common.resource
 Test Template     Run Minimal Testcase
+Suite Setup       Set Robot Version
 
 
 *** Variables ***
@@ -21,7 +22,7 @@ for_passing                 for_passing
 if_else_failing             if_else_failing             expected_rc=1
 if_else_passing             if_else_passing
 invalid_syntax              invalid_syntax              expected_rc=1
-log_debug                   log_debug                   --log-level=DEBUG
+log_debug                   log_debug                   --loglevel=DEBUG
 log_error                   log_error
 log_multiline               log_multiline
 log_warning                 log_warning
@@ -52,8 +53,15 @@ Run Minimal Testcase
     [Documentation]    Runs one of the minimal testcases and checks that the
     ...    output matches.
     [Arguments]    ${testcase}    @{additional_args}    ${expected_rc}=0
-    VAR    ${testcase_file}         ${TESTCASE_DIR}${/}${testcase}.robot
-    VAR    ${testcase_result}       ${TESTCASE_DIR}${/}${testcase}.trace.normal
+    ${testcase_file} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.robot
+    ${testcase_result} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.trace.normal
+    IF    ${ROBOT_VERSION_MAJOR} < 7
+        IF    os.path.exists("${TESTCASE_DIR}${/}${testcase}.trace.rf6.normal")
+            ${testcase_result} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.trace.rf6.normal
+        END
+    END
+    File Should Exist    ${testcase_file}
+    File Should Exist    ${testcase_result}
     ${res} =  Run Process Check Output
     ...    robot-cli
     ...    --output      NONE

@@ -18,7 +18,7 @@ Errors are reported correctly
     ...    --output      NONE
     ...    --report      NONE
     ...    --log         NONE
-    ...    --invalid-argument-name
+    ...    --invalidargumentname
     ...    expected_rc=252
     Should Be Equal    ${expected_stderr}    ${res.stderr}
     Should Be Equal    ${EMPTY}     ${res.stdout}

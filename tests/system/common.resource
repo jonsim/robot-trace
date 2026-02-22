@@ -17,7 +17,7 @@ Run Process Check Output
     ${res} =    Run Process    @{cmd}
     IF    ${res.rc} != ${expected_rc}
         ${cmdline} =    Join Command Line    @{cmd}
-        VAR    ${error} =
+        ${error} =    Set Variable
         ...    Process failed with return code ${res.rc}
         ...    \n\nCommand:\n${cmdline}
         ...    \n\nStandard Output:\n${res.stdout}
@@ -25,3 +25,16 @@ Run Process Check Output
         Fail    ${error}
     END
     RETURN    ${res}
+
+Set Robot Version
+    [Documentation]    Returns the version of Robot Framework being used.
+    ${res} =    Run Process    robot    --version
+    ${version} =    Remove String Using Regexp    ${res.stdout}
+    ...    [Rr]obot ?[Ff]ramework
+    ...    \\(.*\\)
+    ${version} =    Strip String    ${version}
+    ${major} =    Convert To Integer    ${{"${version}".split(".")[0]}}
+    ${minor} =    Convert To Integer    ${{"${version}".split(".")[1]}}
+    Set Suite Variable    ${ROBOT_VERSION}    ${version}
+    Set Suite Variable    ${ROBOT_VERSION_MAJOR}    ${major}
+    Set Suite Variable    ${ROBOT_VERSION_MINOR}    ${minor}
