@@ -17,12 +17,12 @@ This is the easiest and recommended usage model.
 
 #### Installation
 ```sh
-pip install robotframework-cliprogress
+pip install robot-trace
 ```
 
 #### Usage
 ```sh
-robot-cli path/to/tests
+robot-trace path/to/tests
 ```
 
 #### Details
@@ -31,14 +31,14 @@ automatically passes the correct arguments to Robot and bases its own command
 line from the arguments you pass to Robot. This gives a drop-in replacement
 for any existing `robot` command lines.
 
-The `robot-cli` command is a very thin wrapper on top of `robot` - it passes all
+The `robot-trace` command is a very thin wrapper on top of `robot` - it passes all
 arguments it receives straight through, while adding additional arguments to
 ensure the listener output works properly.
 
 Robot's standard `--consolewidth` and `--consolecolors` arguments control the
 listener's output; their behavior matches Robot's documentation.
 
-`robot-cli` also introduces its own custom arguments that are consumed (matching
+`robot-trace` also introduces its own custom arguments that are consumed (matching
 Robot's argument parsing conventions regarding case insensitivity and
 hyphenation) before passing the command line to Robot:
 - `--verbose`: Sets the listener verbosity to `DEBUG` verbosity. Traces from all
@@ -58,14 +58,14 @@ module.
 
 #### Installation
 ```sh
-pip install robotframework-cliprogress
+pip install robot-trace
 ```
 
 #### Usage
 When calling the listener directly, ensure you call Robot with `--console=none`
 to avoid Robot's default console markers getting interleaved.
 ```sh
-robot --listener CLIProgress --console=none path/to/tests
+robot --listener robot_trace --console=none path/to/tests
 ```
 
 #### Details
@@ -91,17 +91,17 @@ or for embedding the listener in your own projects, but you lose the ability to
 update via `pip`.
 
 #### Installation
-Copy `CLIProgress/CLIProgress.py` to your project directory.
+Copy `robot_trace/RobotTrace.py` to your project directory.
 
 #### Usage
 Usage is identical to option 2, except using the file not the module:
 ```sh
-robot --listener CLIProgress.py --console=none path/to/tests
+robot --listener RobotTrace.py --console=none path/to/tests
 ```
 
 
 ### Related options
-You may also consider calling `robot` or `robot-cli` with:
+You may also consider calling `robot` or `robot-trace` with:
 - `--maxerrorlines=10000` to avoid truncating all but the longest error
   messages.
 - `--maxassignlength=10000` to avoid truncating all but the longest variables.
@@ -109,7 +109,7 @@ You may also consider calling `robot` or `robot-cli` with:
 
 ## Example Output
 ```sh
-$ robot-cli tests/minimal_testcases
+$ robot-trace tests/minimal_testcases
 TEST FAILED: Nested Keywords.Nested Failing Test Case
 ═════════════════════════════════════════════════════
 ▶ Level Two Keyword('should_fail=${True}')

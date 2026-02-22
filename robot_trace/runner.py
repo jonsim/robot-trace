@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Jonathan Simmonds
 #
-# A thin wrapper around robot that adds the CLIProgress listener and
+# A thin wrapper around robot that adds the RobotTrace listener and
 # automatically sets its arguments.
 #
 import subprocess
@@ -20,7 +20,7 @@ def main():
     # - Repeated multi-value options: values are appended.
     # We ignore the following rules:
     # - Long options can be abbreviated if unique (e.g., --logle → --loglevel)
-    #   - This would require hardcoding far too much about Robot's CLI.
+    #   - This would require hardcoding far too much about Robot's arguments.
     # We split all options up and normalize their names to make them easier to
     # parse. We don't modify these values and we _only_ use them for parsing in
     # this script - that way even if we screw something up in our parsing. We
@@ -90,7 +90,7 @@ def main():
                 robot_args.append(value)
 
     # Build the command to run robot.
-    listener = "CLIProgress"
+    listener = "robot_trace"
     if console_colors is not None:
         listener += f":colors={console_colors}"
     if console_width is not None:

@@ -2,9 +2,9 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 
-from CLIProgress.CLIProgress import (
+from robot_trace.RobotTrace import (
     ANSI,
-    CLIProgress,
+    RobotTrace,
     TestStatistics,
     TestTimings,
     TraceStack,
@@ -151,38 +151,38 @@ class TestTestTimings(unittest.TestCase):
         self.assertEqual(timings.get_elapsed_time(), 10.0)
 
 
-class TestCLIProgressHelper(unittest.TestCase):
+class TestRobotTraceHelper(unittest.TestCase):
     def setUp(self):
-        self.cli = CLIProgress(verbosity="NORMAL", console_progress="NONE")
+        self.listener = RobotTrace(verbosity="NORMAL", console_progress="NONE")
 
     def test_past_tense_upper_pass(self):
-        self.assertEqual(self.cli._past_tense("PASS"), "PASSED")
+        self.assertEqual(self.listener._past_tense("PASS"), "PASSED")
 
     def test_past_tense_upper_fail(self):
-        self.assertEqual(self.cli._past_tense("FAIL"), "FAILED")
+        self.assertEqual(self.listener._past_tense("FAIL"), "FAILED")
 
     def test_past_tense_upper_skip(self):
-        self.assertEqual(self.cli._past_tense("SKIP"), "SKIPPED")
+        self.assertEqual(self.listener._past_tense("SKIP"), "SKIPPED")
 
     def test_past_tense_lower(self):
-        self.assertEqual(self.cli._past_tense("pass"), "passed")
+        self.assertEqual(self.listener._past_tense("pass"), "passed")
 
     def test_past_tense_title_try(self):
-        self.assertEqual(self.cli._past_tense("Try"), "Tried")
+        self.assertEqual(self.listener._past_tense("Try"), "Tried")
 
     def test_past_tense_title_stop(self):
-        self.assertEqual(self.cli._past_tense("Stop"), "Stopped")
+        self.assertEqual(self.listener._past_tense("Stop"), "Stopped")
 
     def test_verbosity_settings_debug(self):
-        cli = CLIProgress(verbosity="DEBUG", console_progress="NONE")
-        self.assertTrue(cli.print_passed)
-        self.assertTrue(cli.print_skipped)
-        self.assertTrue(cli.print_failed)
+        listener = RobotTrace(verbosity="DEBUG", console_progress="NONE")
+        self.assertTrue(listener.print_passed)
+        self.assertTrue(listener.print_skipped)
+        self.assertTrue(listener.print_failed)
 
     def test_verbosity_settings_quiet(self):
-        cli_quiet = CLIProgress(verbosity="QUIET", console_progress="NONE")
-        self.assertFalse(cli_quiet.print_passed)
-        self.assertTrue(cli_quiet.print_failed)
+        listener_quiet = RobotTrace(verbosity="QUIET", console_progress="NONE")
+        self.assertFalse(listener_quiet.print_passed)
+        self.assertTrue(listener_quiet.print_failed)
 
 
 class TestStatisticsFormatReturns(unittest.TestCase):
@@ -245,76 +245,76 @@ class TestTimingsFormatETA(unittest.TestCase):
         self.assertEqual(timings.format_eta(stats), "unknown")
 
 
-class TestCLIProgressInitialization(unittest.TestCase):
+class TestRobotTraceInitialization(unittest.TestCase):
     @patch("sys.stdout.isatty", return_value=True)
     def test_colors_auto_tty(self, mock_isatty):
-        cli = CLIProgress(colors="AUTO", console_progress="NONE")
-        self.assertTrue(cli.colors)
+        listener = RobotTrace(colors="AUTO", console_progress="NONE")
+        self.assertTrue(listener.colors)
 
     @patch("sys.stdout.isatty", return_value=False)
     def test_colors_auto_no_tty(self, mock_isatty):
-        cli = CLIProgress(colors="AUTO", console_progress="NONE")
-        self.assertFalse(cli.colors)
+        listener = RobotTrace(colors="AUTO", console_progress="NONE")
+        self.assertFalse(listener.colors)
 
     def test_colors_on(self):
-        cli = CLIProgress(colors="ON", console_progress="NONE")
-        self.assertTrue(cli.colors)
+        listener = RobotTrace(colors="ON", console_progress="NONE")
+        self.assertTrue(listener.colors)
 
     def test_colors_off(self):
-        cli = CLIProgress(colors="OFF", console_progress="NONE")
-        self.assertFalse(cli.colors)
+        listener = RobotTrace(colors="OFF", console_progress="NONE")
+        self.assertFalse(listener.colors)
 
     @patch("sys.stdout", new_callable=StringIO)
     def test_console_progress_stdout(self, mock_stdout):
-        cli = CLIProgress(console_progress="STDOUT")
+        listener = RobotTrace(console_progress="STDOUT")
         import sys
 
-        self.assertEqual(cli.progress_stream, sys.stdout)
+        self.assertEqual(listener.progress_stream, sys.stdout)
 
     @patch("sys.stderr", new_callable=StringIO)
     def test_console_progress_stderr(self, mock_stderr):
-        cli = CLIProgress(console_progress="STDERR")
+        listener = RobotTrace(console_progress="STDERR")
         import sys
 
-        self.assertEqual(cli.progress_stream, sys.stderr)
+        self.assertEqual(listener.progress_stream, sys.stderr)
 
 
-class TestCLIProgressLayoutAndProgressBox(unittest.TestCase):
+class TestRobotTraceLayoutAndProgressBox(unittest.TestCase):
     def setUp(self):
         from io import StringIO
 
         self.stream = StringIO()
-        self.cli = CLIProgress(console_progress="NONE", width=80)
-        self.cli.progress_stream = self.stream
+        self.listener = RobotTrace(console_progress="NONE", width=80)
+        self.listener.progress_stream = self.stream
 
     def test_draw_progress_box(self):
-        self.cli._draw_progress_box()
+        self.listener._draw_progress_box()
         output = self.stream.getvalue()
-        self.assertIn("┌" + "─" * (self.cli.terminal_width - 2) + "┐", output)
-        self.assertIn("└" + "─" * (self.cli.terminal_width - 2) + "┘", output)
+        self.assertIn("┌" + "─" * (self.listener.terminal_width - 2) + "┐", output)
+        self.assertIn("└" + "─" * (self.listener.terminal_width - 2) + "┘", output)
 
     def test_write_progress_line_truncation(self):
         left = "A" * 100
         right = "B" * 10
-        self.cli._write_progress_line(0, left, right)
-        line = self.cli.progress_lines[0]
+        self.listener._write_progress_line(0, left, right)
+        line = self.listener.progress_lines[0]
         self.assertTrue(line.endswith("BBBBBBBBBB"))
-        expected_left_len = self.cli.terminal_width - 4 - 10 - 1
+        expected_left_len = self.listener.terminal_width - 4 - 10 - 1
         self.assertTrue(line.startswith("A" * (expected_left_len - 3) + "..."))
 
     def test_clear_progress_box(self):
-        self.cli._clear_progress_box()
+        self.listener._clear_progress_box()
         self.assertIn(ANSI.Cursor.CLEAR_LINE, self.stream.getvalue())
 
 
-class TestCLIProgressLifecycle(unittest.TestCase):
+class TestRobotTraceLifecycle(unittest.TestCase):
     def setUp(self):
         from io import StringIO
 
         patcher = patch("sys.stdout", new_callable=StringIO)
         self.mock_stdout = patcher.start()
 
-        self.cli = CLIProgress(console_progress="NONE", verbosity="DEBUG")
+        self.listener = RobotTrace(console_progress="NONE", verbosity="DEBUG")
 
     def tearDown(self):
         patch.stopall()
@@ -322,56 +322,56 @@ class TestCLIProgressLifecycle(unittest.TestCase):
     def test_suite_lifecycle(self):
         attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
 
-        self.cli.start_suite("My_Suite", attributes)
-        self.assertEqual(self.cli.stats.started_suites, 1)
+        self.listener.start_suite("My_Suite", attributes)
+        self.assertEqual(self.listener.stats.started_suites, 1)
 
         end_attributes = {"status": "PASS", "longname": "My_Suite", "message": ""}
-        self.cli.end_suite("My_Suite", end_attributes)
-        self.assertEqual(self.cli.suite_trace_stack._depth, 0)
+        self.listener.end_suite("My_Suite", end_attributes)
+        self.assertEqual(self.listener.suite_trace_stack._depth, 0)
 
     def test_test_lifecycle(self):
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
-        self.cli.start_suite("My_Suite", suite_attributes)
+        self.listener.start_suite("My_Suite", suite_attributes)
 
         test_attributes = {"longname": "My_Suite.My Test"}
-        self.cli.start_test("My Test", test_attributes)
-        self.assertTrue(self.cli.in_test)
+        self.listener.start_test("My Test", test_attributes)
+        self.assertTrue(self.listener.in_test)
 
         end_test_attributes = {
             "status": "PASS",
             "message": "All good",
             "longname": "My_Suite.My Test",
         }
-        self.cli.end_test("My Test", end_test_attributes)
-        self.assertFalse(self.cli.in_test)
-        self.assertEqual(self.cli.stats.passed_tests, 1)
+        self.listener.end_test("My Test", end_test_attributes)
+        self.assertFalse(self.listener.in_test)
+        self.assertEqual(self.listener.stats.passed_tests, 1)
 
     def test_test_lifecycle_fail_with_errors(self):
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
-        self.cli.start_suite("My_Suite", suite_attributes)
+        self.listener.start_suite("My_Suite", suite_attributes)
 
-        self.cli.start_test("My Test", {"longname": "My_Suite.My Test"})
+        self.listener.start_test("My Test", {"longname": "My_Suite.My Test"})
 
         msg_attributes = {"level": "ERROR", "message": "An error occurred"}
-        self.cli.log_message(msg_attributes)
+        self.listener.log_message(msg_attributes)
 
         end_test_attributes = {
             "status": "FAIL",
             "message": "Failure",
             "longname": "My_Suite.My Test",
         }
-        self.cli.end_test("My Test", end_test_attributes)
-        self.assertEqual(self.cli.stats.failed_tests, 1)
+        self.listener.end_test("My Test", end_test_attributes)
+        self.assertEqual(self.listener.stats.failed_tests, 1)
 
 
-class TestCLIProgressKeywords(unittest.TestCase):
+class TestRobotTraceKeywords(unittest.TestCase):
     def setUp(self):
-        self.cli = CLIProgress(console_progress="NONE", verbosity="DEBUG")
+        self.listener = RobotTrace(console_progress="NONE", verbosity="DEBUG")
 
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
-        self.cli.start_suite("My_Suite", suite_attributes)
+        self.listener.start_suite("My_Suite", suite_attributes)
 
-        self.cli.start_test("My Test", {"longname": "My_Suite.My Test"})
+        self.listener.start_test("My Test", {"longname": "My_Suite.My Test"})
 
     def test_keyword_lifecycle(self):
         attributes = {
@@ -381,61 +381,63 @@ class TestCLIProgressKeywords(unittest.TestCase):
             "elapsedtime": 1500,
         }
 
-        self.cli.start_keyword("BuiltIn.My Keyword", attributes)
-        self.assertEqual(self.cli.test_trace_stack._depth, 1)
+        self.listener.start_keyword("BuiltIn.My Keyword", attributes)
+        self.assertEqual(self.listener.test_trace_stack._depth, 1)
 
-        self.cli.end_keyword("BuiltIn.My Keyword", attributes)
-        self.assertEqual(self.cli.test_trace_stack._depth, 0)
-        self.assertIn("2s", self.cli.test_trace_stack.trace)
+        self.listener.end_keyword("BuiltIn.My Keyword", attributes)
+        self.assertEqual(self.listener.test_trace_stack._depth, 0)
+        self.assertIn("2s", self.listener.test_trace_stack.trace)
 
     def test_keyword_lifecycle_not_run(self):
         attributes = {"type": "KEYWORD", "args": [], "status": "NOT RUN"}
 
-        self.cli.start_keyword("My Keyword", attributes)
-        self.cli.end_keyword("My Keyword", attributes)
-        self.assertEqual(self.cli.test_trace_stack._depth, 0)
+        self.listener.start_keyword("My Keyword", attributes)
+        self.listener.end_keyword("My Keyword", attributes)
+        self.assertEqual(self.listener.test_trace_stack._depth, 0)
 
 
-class TestCLIProgressLogging(unittest.TestCase):
+class TestRobotTraceLogging(unittest.TestCase):
     def setUp(self):
-        self.cli = CLIProgress(console_progress="NONE", verbosity="DEBUG", colors="OFF")
+        self.listener = RobotTrace(
+            console_progress="NONE", verbosity="DEBUG", colors="OFF"
+        )
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
-        self.cli.start_suite("My_Suite", suite_attributes)
-        self.cli.start_test("My Test", {"longname": "My_Suite.My Test"})
+        self.listener.start_suite("My_Suite", suite_attributes)
+        self.listener.start_test("My Test", {"longname": "My_Suite.My Test"})
 
     def test_log_message_warn(self):
         attributes = {"level": "WARN", "message": "A warning\nLine 2"}
-        self.cli.log_message(attributes)
+        self.listener.log_message(attributes)
 
-        self.assertEqual(self.cli.stats.warnings, 1)
-        self.assertTrue(self.cli.test_trace_stack.has_warnings)
-        self.assertIn("W A warning", self.cli.test_trace_stack.trace)
-        self.assertIn("Line 2", self.cli.test_trace_stack.trace)
+        self.assertEqual(self.listener.stats.warnings, 1)
+        self.assertTrue(self.listener.test_trace_stack.has_warnings)
+        self.assertIn("W A warning", self.listener.test_trace_stack.trace)
+        self.assertIn("Line 2", self.listener.test_trace_stack.trace)
 
     def test_log_message_error(self):
         attributes = {"level": "ERROR", "message": "An error"}
-        self.cli.log_message(attributes)
+        self.listener.log_message(attributes)
 
-        self.assertEqual(self.cli.stats.errors, 1)
-        self.assertTrue(self.cli.test_trace_stack.has_errors)
-        self.assertIn("E An error", self.cli.test_trace_stack.trace)
+        self.assertEqual(self.listener.stats.errors, 1)
+        self.assertTrue(self.listener.test_trace_stack.has_errors)
+        self.assertIn("E An error", self.listener.test_trace_stack.trace)
 
     def test_log_message_info(self):
         attributes = {"level": "INFO", "message": "Info msg"}
-        self.cli.log_message(attributes)
+        self.listener.log_message(attributes)
 
-        self.assertIn("I Info msg", self.cli.test_trace_stack.trace)
+        self.assertIn("I Info msg", self.listener.test_trace_stack.trace)
 
 
-class TestCLIProgressClose(unittest.TestCase):
+class TestRobotTraceClose(unittest.TestCase):
     def test_close_prints_summary(self):
         from io import StringIO
 
-        cli = CLIProgress(console_progress="NONE", verbosity="NORMAL")
-        cli.stats.top_level_test_count = 1
-        cli.stats.completed_tests = 1
+        listener = RobotTrace(console_progress="NONE", verbosity="NORMAL")
+        listener.stats.top_level_test_count = 1
+        listener.stats.completed_tests = 1
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            cli.close()
+            listener.close()
             output = mock_stdout.getvalue()
             self.assertIn("RUN COMPLETE", output)

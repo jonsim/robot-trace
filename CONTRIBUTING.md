@@ -32,16 +32,16 @@ pre-commit install
 ```
 
 ### 5. Running locally
-After installing in editable mode, you can test your changes by running the CLI
-against the sample test cases provided in the `tests/minimal_testcases`
-directory:
+After installing in editable mode, you can test your changes by running the
+command line tool against the sample test cases provided in the
+`tests/minimal_testcases` directory:
 ```sh
-robot-cli tests/minimal_testcases
+robot-trace tests/minimal_testcases
 ```
 
 Alternatively, try running it directly as a module:
 ```sh
-robot --listener CLIProgress --console=none tests/minimal_testcases
+robot --listener robot_trace --console=none tests/minimal_testcases
 ```
 
 ### 6. Running tests

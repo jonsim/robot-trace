@@ -63,7 +63,7 @@ Run Minimal Testcase
     File Should Exist    ${testcase_file}
     File Should Exist    ${testcase_result}
     ${res} =  Run Process Check Output
-    ...    robot-cli
+    ...    robot-trace
     ...    --output      NONE
     ...    --report      NONE
     ...    --log         NONE

@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation     Checks the behaviour of the robot-cli runner.
+Documentation     Checks the behaviour of the robot-trace runner.
 Library           OperatingSystem
 Library           String
 Resource          common.resource
@@ -14,7 +14,7 @@ Errors are reported correctly
     ...
     ...    Try --help for usage information.
     ${res} =  Run Process Check Output
-    ...    robot-cli
+    ...    robot-trace
     ...    --output      NONE
     ...    --report      NONE
     ...    --log         NONE

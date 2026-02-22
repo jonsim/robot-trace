@@ -5,10 +5,6 @@ Library     Process
 Library     String
 
 
-*** Variables ***
-${TESTCASE_DIR}     ${TEMPDIR}${/}robot-cli-testcases
-
-
 *** Keywords ***
 Run Process Check Output
     [Documentation]    Runs a process with the given command and arguments,

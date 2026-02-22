@@ -1,14 +1,7 @@
 # Copyright (c) 2026 Jonathan Simmonds
 #
-# Prints Robot test progress to stdout as execution happens.
-#
-# Usage:
-#   robot --listener CLIProgress.py path/to/tests
-#
-# It's recommended to also call with:
-# --console=none to avoid Robot's default console markers getting interleaved.
-# --maxerrorlines=10000 to avoid truncating all but the longest error messages.
-# --maxmaxassignlength=10000 to avoid truncating all but the longest variables.
+# Prints Robot test progress to stdout as execution happens. Refer to the README
+# for usage instructions.
 #
 import enum
 import functools
@@ -288,7 +281,7 @@ class TestTimings:
         return "unknown"
 
 
-class CLIProgress:
+class RobotTrace:
     ROBOT_LISTENER_API_VERSION = 2
 
     def __init__(
