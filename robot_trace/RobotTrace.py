@@ -175,7 +175,6 @@ class TraceStack:
 
 class TestStatistics:
     def __init__(self):
-        self.top_level_suite_count: int | None = None
         self.top_level_test_count: int | None = None
         self.started_suites = 0
         self.started_tests = 0
@@ -188,8 +187,6 @@ class TestStatistics:
 
     def start_suite(self, _, attributes):
         self.started_suites += 1
-        if self.top_level_suite_count is None:
-            self.top_level_suite_count = len(attributes["suites"]) or 1
         if self.top_level_test_count is None:
             self.top_level_test_count = attributes["totaltests"]
 
@@ -209,7 +206,7 @@ class TestStatistics:
             self.skipped_tests += 1
 
     def format_suite_progress(self) -> str:
-        return f"{self.started_suites:2d}/{self.top_level_suite_count:2d}"
+        return f"{self.started_suites:2d}"
 
     def format_test_progress(self) -> str:
         return f"{self.started_tests:2d}/{self.top_level_test_count:2d}"

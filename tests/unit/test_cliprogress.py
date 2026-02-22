@@ -105,7 +105,6 @@ class TestTestStatistics(unittest.TestCase):
         attributes = {"suites": [1, 2, 3], "totaltests": 10}
 
         stats.start_suite("My Suite", attributes)
-        self.assertEqual(stats.top_level_suite_count, 3)
         self.assertEqual(stats.top_level_test_count, 10)
 
     def test_start_test_increment(self):
