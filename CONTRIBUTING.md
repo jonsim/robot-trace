@@ -67,3 +67,31 @@ robot tests/system
 2. Ensure you have run the unit and system tests locally.
 3. Ensure that all `pre-commit` hooks pass successfully.
 4. Open a Pull Request!
+
+
+## Releasing
+
+To release a new version of the project, follow these steps:
+
+### 1. Update the version number
+Update the version number in:
+- `pyproject.toml`
+- `src/robot_trace/__init__.py`
+
+### 2. Commit the version change
+```sh
+git add pyproject.toml src/robot_trace/__init__.py
+git commit -m "Bump version to X.Y.Z"
+```
+
+### 3. Create a release tag
+```sh
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+### 4. Publish to PyPI
+```sh
+python -m build
+python -m twine upload dist/*
+```
