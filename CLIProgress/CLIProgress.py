@@ -463,30 +463,42 @@ class CLIProgress:
 
     def end_suite(self, suite, result):
         trace = self.suite_trace_stack.trace
-        self.suite_trace_stack.clear()
 
         self._write_progress_line(0)
 
         status_text = ""
         if trace:
-            if result.status == "PASS" and self.print_passed:
-                status_text = "SUITE PASSED"
-                if self.colors:
-                    status_text = ANSI.Fore.GREEN(status_text)
-            elif result.status == "SKIP" and self.print_skipped:
-                status_text = "SUITE SKIPPED"
-                if self.colors:
-                    status_text = ANSI.Fore.YELLOW(status_text)
-            elif result.status == "FAIL" and self.print_failed:
-                status_text = "SUITE FAILED"
-                if self.colors:
-                    status_text = ANSI.Fore.RED(status_text)
-        if status_text:
-            status_line = f"{status_text}: {suite.full_name}"
-            underline = "═" * ANSI.len(status_line)
-            if not trace:
-                trace = result.message + "\n"
-            self._print_trace(f"{status_line}\n{underline}\n{trace}")
+            should_print = False
+            status_text = "SUITE " + self._past_tense(result.status)
+            status_color = None
+            if result.status == "PASS":
+                should_print = self.print_passed
+                status_color = ANSI.Fore.GREEN
+            elif result.status == "SKIP":
+                should_print = self.print_skipped
+                status_color = ANSI.Fore.YELLOW
+            elif result.status == "FAIL":
+                should_print = self.print_failed
+                status_color = ANSI.Fore.RED
+            if self.suite_trace_stack.has_errors:
+                should_print |= self.print_errored
+                status_text += " WITH ERRORS"
+                status_color = ANSI.Fore.RED
+            if self.suite_trace_stack.has_warnings:
+                should_print |= self.print_warned
+                status_text += " WITH WARNINGS"
+                status_color = ANSI.Fore.BRIGHT_YELLOW
+            if should_print:
+                if self.colors and status_color:
+                    status_text = status_color(status_text)
+                status_line = f"{status_text}: {suite.full_name}"
+                underline = "═" * ANSI.len(status_line)
+                if not trace:
+                    trace = result.message + "\n"
+                trace = f"{status_line}\n{underline}\n{trace}"
+                self._print_trace(trace)
+
+        self.suite_trace_stack.clear()
 
     # ------------------------------------------------------------------ test
 
