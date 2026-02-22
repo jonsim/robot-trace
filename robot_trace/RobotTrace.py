@@ -555,6 +555,7 @@ class RobotTrace:
     def start_keyword(self, name, attributes):
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
         kwtype = attributes["type"]
+        kwname = attributes["kwname"]
         args = attributes["args"]
         if kwtype != "KEYWORD":
             name = f"{kwtype}    {name}" if name else kwtype
@@ -565,7 +566,7 @@ class RobotTrace:
         trace_line = f"▶ {name}{argstr}"
         stack.push_keyword(trace_line)
 
-        self._write_progress_line(2, f"[{name}]  {argstr}")
+        self._write_progress_line(2, f"[{kwname}]  {argstr}")
 
     def end_keyword(self, name, attributes):
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack

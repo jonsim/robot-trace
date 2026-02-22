@@ -379,6 +379,7 @@ class TestRobotTraceKeywords(unittest.TestCase):
             "args": ["arg1"],
             "status": "PASS",
             "elapsedtime": 1500,
+            "kwname": "My Keyword",
         }
 
         self.listener.start_keyword("BuiltIn.My Keyword", attributes)
@@ -389,10 +390,15 @@ class TestRobotTraceKeywords(unittest.TestCase):
         self.assertIn("2s", self.listener.test_trace_stack.trace)
 
     def test_keyword_lifecycle_not_run(self):
-        attributes = {"type": "KEYWORD", "args": [], "status": "NOT RUN"}
+        attributes = {
+            "type": "KEYWORD",
+            "args": [],
+            "status": "NOT RUN",
+            "kwname": "My Keyword",
+        }
 
-        self.listener.start_keyword("My Keyword", attributes)
-        self.listener.end_keyword("My Keyword", attributes)
+        self.listener.start_keyword("MyLib.My Keyword", attributes)
+        self.listener.end_keyword("MyLib.My Keyword", attributes)
         self.assertEqual(self.listener.test_trace_stack._depth, 0)
 
 
