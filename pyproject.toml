@@ -30,7 +30,6 @@ indent-style = "space"
 
 [tool.robocop.lint.per_file_ignores]
 "tests/minimal_testcases/*" = ["DOC01", "DOC02", "DOC03", "DOC04"]
-"testcases/*" = ["DOC01", "DOC02", "DOC03", "DOC04"]
 "tests/minimal_testcases/invalid_syntax.robot" = ["MISC08"]
 
 [tool.robocop.format]
