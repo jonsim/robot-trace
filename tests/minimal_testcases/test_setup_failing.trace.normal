@@ -1,6 +1,6 @@
 TEST FAILED: Test Setup Failing.Test Case 1
 ═══════════════════════════════════════════
-▶ Do Test Setup()
+▶ SETUP    Do Test Setup()
   ▶ BuiltIn.Log('Doing test setup')
     I Doing test setup
     ✓ PASS     0s

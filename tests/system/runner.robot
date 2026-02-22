@@ -20,5 +20,5 @@ Errors are reported correctly
     ...    --log         NONE
     ...    --invalid-argument-name
     ...    expected_rc=252
-    Should Be Equal    ${res.stderr}    ${expected_stderr}
-    Should Be Equal    ${res.stdout}    ${EMPTY}
+    Should Be Equal    ${expected_stderr}    ${res.stderr}
+    Should Be Equal    ${EMPTY}     ${res.stdout}

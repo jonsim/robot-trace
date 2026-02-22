@@ -1,6 +1,6 @@
 SUITE PASSED WITH WARNINGS: Suite Teardown Warning
 ══════════════════════════════════════════════════
-▶ Do Suite Teardown()
+▶ TEARDOWN    Do Suite Teardown()
   ▶ BuiltIn.Log('Doing suite teardown')
     I Doing suite teardown
     ✓ PASS     0s

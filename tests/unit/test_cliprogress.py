@@ -1,6 +1,6 @@
 import unittest
 from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from CLIProgress.CLIProgress import (
     ANSI,
@@ -102,36 +102,30 @@ class TestTraceStack(unittest.TestCase):
 class TestTestStatistics(unittest.TestCase):
     def test_start_suite_counts(self):
         stats = TestStatistics()
-        suite_mock = MagicMock()
-        suite_mock.suites = [1, 2, 3]
-        suite_mock.test_count = 10
+        attributes = {"suites": [1, 2, 3], "totaltests": 10}
 
-        stats.start_suite(suite_mock)
+        stats.start_suite("My Suite", attributes)
         self.assertEqual(stats.top_level_suite_count, 3)
         self.assertEqual(stats.top_level_test_count, 10)
 
     def test_start_test_increment(self):
         stats = TestStatistics()
-        stats.start_test()
+        stats.start_test("My Test", {})
         self.assertEqual(stats.started_tests, 1)
 
     def test_end_test_pass(self):
         stats = TestStatistics()
-        result_mock = MagicMock()
-        result_mock.not_run = False
-        result_mock.status = "PASS"
+        attributes = {"status": "PASS"}
 
-        stats.end_test(result_mock)
+        stats.end_test("My Test", attributes)
         self.assertEqual(stats.completed_tests, 1)
         self.assertEqual(stats.passed_tests, 1)
 
     def test_end_test_fail(self):
         stats = TestStatistics()
-        result_mock = MagicMock()
-        result_mock.not_run = False
-        result_mock.status = "FAIL"
+        attributes = {"status": "FAIL"}
 
-        stats.end_test(result_mock)
+        stats.end_test("My Test", attributes)
         self.assertEqual(stats.completed_tests, 1)
         self.assertEqual(stats.failed_tests, 1)
 
@@ -326,64 +320,47 @@ class TestCLIProgressLifecycle(unittest.TestCase):
         patch.stopall()
 
     def test_suite_lifecycle(self):
-        suite_mock = MagicMock()
-        suite_mock.suites = [1]
-        suite_mock.test_count = 1
-        suite_mock.full_name = "My_Suite"
+        attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
 
-        result_mock = MagicMock()
-        result_mock.status = "PASS"
-
-        self.cli.start_suite(suite_mock, result_mock)
+        self.cli.start_suite("My_Suite", attributes)
         self.assertEqual(self.cli.stats.started_suites, 1)
 
-        self.cli.end_suite(suite_mock, result_mock)
+        end_attributes = {"status": "PASS", "longname": "My_Suite", "message": ""}
+        self.cli.end_suite("My_Suite", end_attributes)
         self.assertEqual(self.cli.suite_trace_stack._depth, 0)
 
     def test_test_lifecycle(self):
-        suite_mock = MagicMock()
-        suite_mock.suites = [1]
-        suite_mock.test_count = 1
-        suite_mock.full_name = "My_Suite"
+        suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
+        self.cli.start_suite("My_Suite", suite_attributes)
 
-        self.cli.start_suite(suite_mock, MagicMock())
-
-        test_mock = MagicMock()
-        test_mock.name = "My Test"
-        test_mock.full_name = "My_Suite.My Test"
-
-        result_mock = MagicMock()
-        result_mock.status = "PASS"
-        result_mock.not_run = False
-        result_mock.message = "All good"
-
-        self.cli.start_test(test_mock, result_mock)
+        test_attributes = {"longname": "My_Suite.My Test"}
+        self.cli.start_test("My Test", test_attributes)
         self.assertTrue(self.cli.in_test)
 
-        self.cli.end_test(test_mock, result_mock)
+        end_test_attributes = {
+            "status": "PASS",
+            "message": "All good",
+            "longname": "My_Suite.My Test",
+        }
+        self.cli.end_test("My Test", end_test_attributes)
         self.assertFalse(self.cli.in_test)
         self.assertEqual(self.cli.stats.passed_tests, 1)
 
     def test_test_lifecycle_fail_with_errors(self):
-        suite_mock = MagicMock()
-        suite_mock.suites = [1]
-        suite_mock.test_count = 1
-        self.cli.start_suite(suite_mock, MagicMock())
-        test_mock = MagicMock()
-        test_mock.name = "My Test"
-        result_mock = MagicMock()
-        result_mock.status = "FAIL"
-        result_mock.not_run = False
-        result_mock.message = "Failure"
+        suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
+        self.cli.start_suite("My_Suite", suite_attributes)
 
-        self.cli.start_test(test_mock, result_mock)
+        self.cli.start_test("My Test", {"longname": "My_Suite.My Test"})
 
-        msg = MagicMock()
-        msg.level = "ERROR"
-        msg.message = "An error occurred"
-        self.cli.log_message(msg)
+        msg_attributes = {"level": "ERROR", "message": "An error occurred"}
+        self.cli.log_message(msg_attributes)
 
-        self.cli.end_test(test_mock, result_mock)
+        end_test_attributes = {
+            "status": "FAIL",
+            "message": "Failure",
+            "longname": "My_Suite.My Test",
+        }
+        self.cli.end_test("My Test", end_test_attributes)
         self.assertEqual(self.cli.stats.failed_tests, 1)
 
 
@@ -391,61 +368,44 @@ class TestCLIProgressKeywords(unittest.TestCase):
     def setUp(self):
         self.cli = CLIProgress(console_progress="NONE", verbosity="DEBUG")
 
-        suite_mock = MagicMock()
-        suite_mock.suites = [1]
-        suite_mock.test_count = 1
-        self.cli.start_suite(suite_mock, MagicMock())
+        suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
+        self.cli.start_suite("My_Suite", suite_attributes)
 
-        self.test_mock = MagicMock()
-        self.test_mock.name = "My Test"
-        self.result_mock = MagicMock()
-        self.result_mock.status = "PASS"
-        self.result_mock.not_run = False
-
-        self.cli.start_test(self.test_mock, self.result_mock)
+        self.cli.start_test("My Test", {"longname": "My_Suite.My Test"})
 
     def test_keyword_lifecycle(self):
-        kw_mock = MagicMock()
-        kw_res_mock = MagicMock()
-        kw_res_mock.name = "My Keyword"
-        kw_res_mock.libname = "BuiltIn"
-        kw_res_mock.args = ["arg1"]
-        kw_res_mock.status = "PASS"
-        kw_res_mock.elapsedtime = 1500
+        attributes = {
+            "type": "KEYWORD",
+            "args": ["arg1"],
+            "status": "PASS",
+            "elapsedtime": 1500,
+        }
 
-        self.cli.start_keyword(kw_mock, kw_res_mock)
+        self.cli.start_keyword("BuiltIn.My Keyword", attributes)
         self.assertEqual(self.cli.test_trace_stack._depth, 1)
 
-        self.cli.end_keyword(kw_mock, kw_res_mock)
+        self.cli.end_keyword("BuiltIn.My Keyword", attributes)
         self.assertEqual(self.cli.test_trace_stack._depth, 0)
         self.assertIn("2s", self.cli.test_trace_stack.trace)
 
     def test_keyword_lifecycle_not_run(self):
-        kw_mock = MagicMock()
-        kw_res_mock = MagicMock()
-        kw_res_mock.status = "NOT RUN"
+        attributes = {"type": "KEYWORD", "args": [], "status": "NOT RUN"}
 
-        self.cli.start_keyword(kw_mock, kw_res_mock)
-        self.cli.end_keyword(kw_mock, kw_res_mock)
+        self.cli.start_keyword("My Keyword", attributes)
+        self.cli.end_keyword("My Keyword", attributes)
         self.assertEqual(self.cli.test_trace_stack._depth, 0)
 
 
 class TestCLIProgressLogging(unittest.TestCase):
     def setUp(self):
         self.cli = CLIProgress(console_progress="NONE", verbosity="DEBUG", colors="OFF")
-        suite_mock = MagicMock()
-        suite_mock.suites = [1]
-        suite_mock.test_count = 1
-        self.cli.start_suite(suite_mock, MagicMock())
-        test_mock = MagicMock()
-        test_mock.name = "My Test"
-        self.cli.start_test(test_mock, MagicMock())
+        suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
+        self.cli.start_suite("My_Suite", suite_attributes)
+        self.cli.start_test("My Test", {"longname": "My_Suite.My Test"})
 
     def test_log_message_warn(self):
-        msg = MagicMock()
-        msg.level = "WARN"
-        msg.message = "A warning\nLine 2"
-        self.cli.log_message(msg)
+        attributes = {"level": "WARN", "message": "A warning\nLine 2"}
+        self.cli.log_message(attributes)
 
         self.assertEqual(self.cli.stats.warnings, 1)
         self.assertTrue(self.cli.test_trace_stack.has_warnings)
@@ -453,20 +413,16 @@ class TestCLIProgressLogging(unittest.TestCase):
         self.assertIn("Line 2", self.cli.test_trace_stack.trace)
 
     def test_log_message_error(self):
-        msg = MagicMock()
-        msg.level = "ERROR"
-        msg.message = "An error"
-        self.cli.log_message(msg)
+        attributes = {"level": "ERROR", "message": "An error"}
+        self.cli.log_message(attributes)
 
         self.assertEqual(self.cli.stats.errors, 1)
         self.assertTrue(self.cli.test_trace_stack.has_errors)
         self.assertIn("E An error", self.cli.test_trace_stack.trace)
 
     def test_log_message_info(self):
-        msg = MagicMock()
-        msg.level = "INFO"
-        msg.message = "Info msg"
-        self.cli.log_message(msg)
+        attributes = {"level": "INFO", "message": "Info msg"}
+        self.cli.log_message(attributes)
 
         self.assertIn("I Info msg", self.cli.test_trace_stack.trace)
 

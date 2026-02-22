@@ -1,6 +1,6 @@
 SUITE FAILED: Suite Teardown Failing
 ════════════════════════════════════
-▶ Do Suite Teardown()
+▶ TEARDOWN    Do Suite Teardown()
   ▶ BuiltIn.Log('Doing suite teardown')
     I Doing suite teardown
     ✓ PASS     0s

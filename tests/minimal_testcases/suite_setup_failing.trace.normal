@@ -5,7 +5,7 @@ The keyword failed
 
 SUITE FAILED: Suite Setup Failing
 ═════════════════════════════════
-▶ Do Suite Setup()
+▶ SETUP    Do Suite Setup()
   ▶ BuiltIn.Log('Doing suite setup')
     I Doing suite setup
     ✓ PASS     0s

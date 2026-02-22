@@ -62,7 +62,7 @@ Run Minimal Testcase
     ...    @{additional_args}
     ...    ${testcase_file}
     ...    expected_rc=${expected_rc}
-    Should Be Equal    ${res.stderr}    ${EMPTY}
+    Should Be Equal    ${EMPTY}    ${res.stderr}
     ${testcase_expectation} =    Get File    ${testcase_result}
     ${testcase_expectation} =    Strip String    ${testcase_expectation}
-    Should Be Equal    ${res.stdout}    ${testcase_expectation}
+    Should Be Equal    ${testcase_expectation}    ${res.stdout}

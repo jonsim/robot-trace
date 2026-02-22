@@ -191,25 +191,26 @@ class TestStatistics:
         self.warnings = 0
         self.errors = 0
 
-    def start_suite(self, suite):
+    def start_suite(self, _, attributes):
         self.started_suites += 1
         if self.top_level_suite_count is None:
-            self.top_level_suite_count = len(suite.suites) or 1
+            self.top_level_suite_count = len(attributes["suites"]) or 1
         if self.top_level_test_count is None:
-            self.top_level_test_count = suite.test_count
+            self.top_level_test_count = attributes["totaltests"]
 
-    def start_test(self):
+    def start_test(self, _, __):
         self.started_tests += 1
 
-    def end_test(self, result):
-        if result.not_run:
+    def end_test(self, _, attributes):
+        status = attributes["status"]
+        if status == "NOT RUN":
             return
         self.completed_tests += 1
-        if result.status == "PASS":
+        if status == "PASS":
             self.passed_tests += 1
-        elif result.status == "FAIL":
+        elif status == "FAIL":
             self.failed_tests += 1
-        elif result.status == "SKIP":
+        elif status == "SKIP":
             self.skipped_tests += 1
 
     def format_suite_progress(self) -> str:
@@ -288,7 +289,7 @@ class TestTimings:
 
 
 class CLIProgress:
-    ROBOT_LISTENER_API_VERSION = 3
+    ROBOT_LISTENER_API_VERSION = 2
 
     def __init__(
         self,
@@ -452,32 +453,34 @@ class CLIProgress:
 
     # ------------------------------------------------------------------ suite
 
-    def start_suite(self, suite, result):
-        self.stats.start_suite(suite)
+    def start_suite(self, name, attributes):
+        self.stats.start_suite(name, attributes)
         self.timings.start_suite()
         self.suite_trace_stack.clear()
 
+        suite_name = attributes["longname"]
         self._write_progress_line(
-            0, f"[SUITE {self.stats.format_suite_progress()}] {suite.full_name}"
+            0, f"[SUITE {self.stats.format_suite_progress()}] {suite_name}"
         )
 
-    def end_suite(self, suite, result):
+    def end_suite(self, name, attributes):
         trace = self.suite_trace_stack.trace
 
         self._write_progress_line(0)
 
+        status = attributes["status"]
         status_text = ""
         if trace:
             should_print = False
-            status_text = "SUITE " + self._past_tense(result.status)
+            status_text = "SUITE " + self._past_tense(status)
             status_color = None
-            if result.status == "PASS":
+            if status == "PASS":
                 should_print = self.print_passed
                 status_color = ANSI.Fore.GREEN
-            elif result.status == "SKIP":
+            elif status == "SKIP":
                 should_print = self.print_skipped
                 status_color = ANSI.Fore.YELLOW
-            elif result.status == "FAIL":
+            elif status == "FAIL":
                 should_print = self.print_failed
                 status_color = ANSI.Fore.RED
             if self.suite_trace_stack.has_errors:
@@ -491,10 +494,11 @@ class CLIProgress:
             if should_print:
                 if self.colors and status_color:
                     status_text = status_color(status_text)
-                status_line = f"{status_text}: {suite.full_name}"
+                suite_name = attributes["longname"]
+                status_line = f"{status_text}: {suite_name}"
                 underline = "═" * ANSI.len(status_line)
                 if not trace:
-                    trace = result.message + "\n"
+                    trace = attributes["message"] + "\n"
                 trace = f"{status_line}\n{underline}\n{trace}"
                 self._print_trace(trace)
 
@@ -502,34 +506,35 @@ class CLIProgress:
 
     # ------------------------------------------------------------------ test
 
-    def start_test(self, test, result):
-        self.stats.start_test()
+    def start_test(self, name, attributes):
+        self.stats.start_test(name, attributes)
         self.timings.start_test()
         self.test_trace_stack.clear()
 
         self._write_progress_line(
             1,
-            f"[TEST {self.stats.format_test_progress()}] {test.name}",
+            f"[TEST {self.stats.format_test_progress()}] {name}",
             f"(elapsed {self.timings.format_elapsed_time()}, "
             f"ETA {self.timings.format_eta(self.stats)})",
         )
 
-    def end_test(self, test, result):
+    def end_test(self, name, attributes):
         trace = self.test_trace_stack.trace
-        self.stats.end_test(result)
+        self.stats.end_test(name, attributes)
         self.timings.end_test()
         self._write_progress_line(1)
-        if not result.not_run:
+        status = attributes["status"]
+        if status != "NOT RUN":
             should_print = False
-            status_text = "TEST " + self._past_tense(result.status)
+            status_text = "TEST " + self._past_tense(status)
             status_color = None
-            if result.status == "PASS":
+            if status == "PASS":
                 should_print = self.print_passed
                 status_color = ANSI.Fore.GREEN
-            elif result.status == "SKIP":
+            elif status == "SKIP":
                 should_print = self.print_skipped
                 status_color = ANSI.Fore.YELLOW
-            elif result.status == "FAIL":
+            elif status == "FAIL":
                 should_print = self.print_failed
                 status_color = ANSI.Fore.RED
             if self.test_trace_stack.has_errors:
@@ -543,35 +548,36 @@ class CLIProgress:
             if should_print:
                 if self.colors and status_color:
                     status_text = status_color(status_text)
-                status_line = f"{status_text}: {test.full_name}"
+                test_name = attributes["longname"]
+                status_line = f"{status_text}: {test_name}"
                 underline = "═" * ANSI.len(status_line)
                 if not trace:
-                    trace = result.message + "\n"
+                    trace = attributes["message"] + "\n"
                 trace = f"{status_line}\n{underline}\n{trace}"
                 self._print_trace(trace)
         self.test_trace_stack.clear()
 
     # ------------------------------------------------------------------ keyword
 
-    def start_keyword(self, keyword, result):
+    def start_keyword(self, name, attributes):
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
-        name = (
-            getattr(result, "kwname", None)
-            or getattr(result, "name", None)
-            or "<unknown>"
-        )
-        lib = getattr(result, "libname", None)
-        args = getattr(result, "args", None) or []
-        argstr = ", ".join(repr(a) for a in args)
-        kwstr = f"{lib}.{name}" if lib else name
-        trace_line = f"▶ {kwstr}({argstr})"
+        kwtype = attributes["type"]
+        args = attributes["args"]
+        if kwtype != "KEYWORD":
+            name = f"{kwtype}    {name}" if name else kwtype
+        if args or kwtype in {"KEYWORD", "SETUP", "TEARDOWN"}:
+            argstr = "(" + ", ".join(repr(a) for a in args) + ")"
+        else:
+            argstr = ""
+        trace_line = f"▶ {name}{argstr}"
         stack.push_keyword(trace_line)
 
         self._write_progress_line(2, f"[{name}]  {argstr}")
 
-    def end_keyword(self, keyword, result):
+    def end_keyword(self, name, attributes):
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
-        if result.status == "NOT RUN":
+        status = attributes["status"]
+        if status == "NOT RUN":
             # Discard; the header was never flushed so it just disappears.
             stack.pop_keyword()
             self._write_progress_line(2)
@@ -581,32 +587,27 @@ class CLIProgress:
         # so the hierarchy appears in the trace.
         stack.flush()
 
-        elapsed_ms = getattr(result, "elapsedtime", None)
-
-        elapsed = (
-            TestTimings.format_time(elapsed_ms / 1000.0)
-            if elapsed_ms is not None
-            else "?s"
-        )
+        elapsed_time_ms = attributes["elapsedtime"]
+        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
 
         keyword_trace = "  "
-        if result.status == "PASS":
-            status = "✓ PASS"
+        if status == "PASS":
+            status_text = "✓ PASS"
             if self.colors:
-                status = ANSI.Fore.BRIGHT_GREEN(status)
-            keyword_trace += f"{status}    {elapsed}"
-        elif result.status == "SKIP":
-            status = "→ SKIP"
+                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "SKIP":
+            status_text = "→ SKIP"
             if self.colors:
-                status = ANSI.Fore.YELLOW(status)
-            keyword_trace += f"{status}    {elapsed}"
-        elif result.status == "FAIL":
-            status = "✗ FAIL"
+                status_text = ANSI.Fore.YELLOW(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "FAIL":
+            status_text = "✗ FAIL"
             if self.colors:
-                status = ANSI.Fore.BRIGHT_RED(status)
-            keyword_trace += f"{status}    {elapsed}"
+                status_text = ANSI.Fore.BRIGHT_RED(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
         else:
-            keyword_trace += f"? {result.status}    {elapsed}"
+            keyword_trace += f"? {status}    {elapsed}"
 
         stack.append_trace(keyword_trace)
 
@@ -614,9 +615,9 @@ class CLIProgress:
 
     # ------------------------------------------------------------------ logging
 
-    def log_message(self, message):
-        level = getattr(message, "level", None) or "UNKNOWN"
-        text = getattr(message, "message", None) or ""
+    def log_message(self, attributes):
+        level = attributes["level"]
+        text = attributes["message"]
 
         # Flush keyword headers so they appear above the log line.
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack

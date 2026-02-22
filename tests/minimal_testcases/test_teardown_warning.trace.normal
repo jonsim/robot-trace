@@ -3,7 +3,7 @@ TEST PASSED WITH WARNINGS: Test Teardown Warning.Test Case 1
 ▶ BuiltIn.Log('In Test Case 1')
   I In Test Case 1
   ✓ PASS     0s
-▶ Do Test Teardown()
+▶ TEARDOWN    Do Test Teardown()
   ▶ BuiltIn.Log('Doing test teardown')
     I Doing test teardown
     ✓ PASS     0s

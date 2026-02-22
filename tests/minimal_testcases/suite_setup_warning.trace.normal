@@ -1,6 +1,6 @@
 SUITE PASSED WITH WARNINGS: Suite Setup Warning
 ═══════════════════════════════════════════════
-▶ Do Suite Setup()
+▶ SETUP    Do Suite Setup()
   ▶ BuiltIn.Log('Doing suite setup')
     I Doing suite setup
     ✓ PASS     0s

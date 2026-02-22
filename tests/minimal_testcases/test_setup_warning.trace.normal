@@ -1,6 +1,6 @@
 TEST PASSED WITH WARNINGS: Test Setup Warning.Test Case 1
 ═════════════════════════════════════════════════════════
-▶ Do Test Setup()
+▶ SETUP    Do Test Setup()
   ▶ BuiltIn.Log('Doing test setup')
     I Doing test setup
     ✓ PASS     0s
