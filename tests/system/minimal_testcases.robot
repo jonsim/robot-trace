@@ -2,7 +2,6 @@
 Documentation     Runs each of the minimal testcases in ../minimal_testcases and
 ...    checks the output matches.
 Library           OperatingSystem
-Library           Process
 Library           String
 Resource          common.resource
 Test Template     Run Minimal Testcase
