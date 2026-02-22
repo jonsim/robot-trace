@@ -8,8 +8,8 @@ TEST FAILED: Basic Failing.Failing Testcase
   ✓ PASS     0s
 ▶ BuiltIn.Should Be Equal As Numbers('${value}', '4')
   I Argument types are:
-  <class 'int'>
-  <class 'str'>
+    <class 'int'>
+    <class 'str'>
   F 3.0 != 4.0
   ✗ FAIL     0s
 

@@ -23,6 +23,7 @@ if_else_passing             if_else_passing
 invalid_syntax              invalid_syntax              expected_rc=1
 log_debug                   log_debug                   --log-level=DEBUG
 log_error                   log_error
+log_multiline               log_multiline
 log_warning                 log_warning
 multiple_failing            multiple_failing            expected_rc=2
 multiple_passing            multiple_passing

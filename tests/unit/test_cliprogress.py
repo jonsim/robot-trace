@@ -86,6 +86,18 @@ class TestTraceStack(unittest.TestCase):
         stack.flush()
         self.assertIn("Keyword A", stack.trace)
 
+    def test_append_trace(self):
+        stack = TraceStack()
+        stack.push_keyword("Keyword A")
+        stack.append_trace("Hello world")
+        self.assertEqual("  Hello world\n", stack.trace)
+
+    def test_append_multiline_trace(self):
+        stack = TraceStack()
+        stack.push_keyword("Keyword A")
+        stack.append_trace("Hello world\nLine 2")
+        self.assertEqual("  Hello world\n  Line 2\n", stack.trace)
+
 
 class TestTestStatistics(unittest.TestCase):
     def test_start_suite_counts(self):

@@ -8,8 +8,8 @@ TEST FAILED: If Else Failing.IF-ELSE Failing Branch
   ✓ PASS     0s
 ▶ BuiltIn.Should Be Equal As Numbers('${result}', '4')
   I Argument types are:
-  <class 'int'>
-  <class 'str'>
+    <class 'int'>
+    <class 'str'>
   F 2.0 != 4.0
   ✗ FAIL     0s
 

@@ -9,8 +9,8 @@ TEST PASSED WITH WARNINGS: Test Setup Warning.Test Case 1
     ✓ PASS     0s
   ▶ BuiltIn.Should Be Equal As Numbers('${value}', '3')
     I Argument types are:
-  <class 'int'>
-  <class 'str'>
+      <class 'int'>
+      <class 'str'>
     ✓ PASS     0s
   ▶ BuiltIn.Log('Test setup completed', 'level=WARN')
     W Test setup completed

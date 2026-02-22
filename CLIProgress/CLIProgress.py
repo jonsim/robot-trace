@@ -163,8 +163,11 @@ class TraceStack:
         self._stack.pop()
         self._depth -= 1
 
-    def append_trace(self, trace_line: str):
-        self._trace += self._indent + trace_line + "\n"
+    def append_trace(self, trace_lines: str):
+        trace_lines = "\n".join(
+            self._indent + line for line in trace_lines.splitlines()
+        )
+        self._trace += trace_lines + "\n"
 
     def flush(self, decrement_depth: bool = True):
         """Flush any pending keyword headers to the trace and clear the stack."""
