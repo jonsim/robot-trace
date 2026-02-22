@@ -132,6 +132,7 @@ class TraceStack:
         self._stack: list[str] = []
         self.has_warnings: bool = False
         self.has_errors: bool = False
+        self.has_failures: bool = False
 
     def clear(self):
         self._trace = ""
@@ -139,6 +140,7 @@ class TraceStack:
         self._stack.clear()
         self.has_warnings = False
         self.has_errors = False
+        self.has_failures = False
 
     @property
     def _indent(self) -> str:
@@ -464,17 +466,11 @@ class RobotTrace:
         status = attributes["status"]
         status_text = ""
         if trace:
-            should_print = False
+            should_print = self.print_passed
             status_text = "SUITE " + self._past_tense(status)
             status_color = None
-            if status == "PASS":
-                should_print = self.print_passed
-                status_color = ANSI.Fore.GREEN
-            elif status == "SKIP":
-                should_print = self.print_skipped
-                status_color = ANSI.Fore.YELLOW
-            elif status == "FAIL":
-                should_print = self.print_failed
+            if self.suite_trace_stack.has_failures:
+                should_print |= self.print_failed
                 status_color = ANSI.Fore.RED
             if self.suite_trace_stack.has_errors:
                 should_print |= self.print_errored
@@ -646,6 +642,8 @@ class RobotTrace:
         elif level == "WARN":
             self.stats.warnings += 1
             stack.has_warnings = True
+        elif level == "FAIL":
+            stack.has_failures = True
 
         stack.append_trace("\n".join(lines))
 
