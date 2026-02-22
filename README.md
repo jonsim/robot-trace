@@ -17,7 +17,7 @@ This is the easiest and recommended usage model.
 
 #### Installation
 ```sh
-pip install robot-trace
+pip install robotframework-trace
 ```
 
 #### Usage
@@ -58,7 +58,7 @@ module.
 
 #### Installation
 ```sh
-pip install robot-trace
+pip install robotframework-trace
 ```
 
 #### Usage
