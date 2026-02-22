@@ -14,6 +14,7 @@ Nested Erroring Test Case
 Nested Skip Test Case
     Level Two Keyword    should_skip=${True}
 
+
 *** Keywords ***
 Level One Keyword
     Log    In the level one keyword
@@ -21,23 +22,15 @@ Level One Keyword
 
 Level Two Keyword
     [Arguments]    ${should_fail}=${False}
-    ...            ${should_warn}=${False}
-    ...            ${should_skip}=${False}
-    ...            ${should_error}=${False}
+    ...    ${should_warn}=${False}
+    ...    ${should_skip}=${False}
+    ...    ${should_error}=${False}
     Log    In the level two keyword
     Level Three Keyword
-    IF    ${should_warn}
-        Warning Keyword
-    END
-    IF    ${should_fail}
-        Failing Keyword
-    END
-    IF    ${should_error}
-        Erroring Keyword
-    END
-    IF    ${should_skip}
-        Skip    This keyword was skipped
-    END
+    IF    ${should_warn}    Warning Keyword
+    IF    ${should_fail}    Failing Keyword
+    IF    ${should_error}    Erroring Keyword
+    IF    ${should_skip}    Skip    This keyword was skipped
 
 Level Three Keyword
     Log    In the level three keyword

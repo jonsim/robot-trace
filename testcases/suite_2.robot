@@ -1,14 +1,15 @@
 *** Settings ***
-Library    Collections
-Library    OperatingSystem
-Library    Process
-Library    String
+Library     Collections
+Library     OperatingSystem
+Library     Process
+Library     String
+
 
 *** Variables ***
-${DELAY_SHORT}    0.3s
-${DELAY_MEDIUM}   0.8s
-${DELAY_LONG}     3s
-${GREETING}       Welcome to Robot Framework!
+${DELAY_MEDIUM}     0.8s
+${DELAY_LONG}       3s
+${GREETING}         Welcome to Robot Framework!
+
 
 *** Test Cases ***
 Test Case 1 - Fast
@@ -39,7 +40,7 @@ Test Case 4 - Run Process
 
 Test Case 5 - Fast
     Log    Starting Test Case 5
-    ${list}=    Create List    A    B    C
+    VAR  @{list}    A    B    C
     Append To List    ${list}    D
     Length Should Be    ${list}    4
     Log    Test Case 5 completed.

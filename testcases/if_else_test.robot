@@ -1,5 +1,6 @@
 *** Settings ***
-Library    Collections
+Library     Collections
+
 
 *** Test Cases ***
 IF-ELSE Shows Only Taken Branch

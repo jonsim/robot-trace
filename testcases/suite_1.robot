@@ -1,14 +1,16 @@
 *** Settings ***
-Library    Collections
-Library    OperatingSystem
-Library    Process
-Library    String
+Library     Collections
+Library     OperatingSystem
+Library     Process
+Library     String
+
 
 *** Variables ***
-${DELAY_SHORT}    0.5s
-${DELAY_MEDIUM}   1s
-${DELAY_LONG}     2s
-${TEST_MESSAGE}   Hello, Robot Framework!
+${DELAY_SHORT}      0.5s
+${DELAY_MEDIUM}     1s
+${DELAY_LONG}       2s
+${GREETING}     Hello, Robot Framework!
+
 
 *** Test Cases ***
 Test Case 1 - Fast
@@ -27,19 +29,19 @@ Test Case 2 - Medium
 Test Case 3 - Slow
     Log    Starting Test Case 3
     Sleep    ${DELAY_LONG}
-    ${text}=    Get Substring    ${TEST_MESSAGE}    0    5
+    ${text}=    Get Substring    ${GREETING}    0    5
     Should Be Equal    ${text}    Hello
     Log    Test Case 3 completed.
 
 Test Case 4 - Run Process
     Log    Starting Test Case 4
-    ${output}=    Run Process    echo    ${TEST_MESSAGE}
+    ${output}=    Run Process    echo    ${GREETING}
     Should Contain    ${output.stdout}    Robot Framework
     Log    Test Case 4 completed.
 
 Test Case 5 - Fast
     Log    Starting Test Case 5
-    ${list}=    Create List    1    2
+    VAR  @{list}    1    2
     Append To List    ${list}    4
     Length Should Be    ${list}    4
     Log    Test Case 5 completed.

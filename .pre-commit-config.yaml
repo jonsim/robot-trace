@@ -13,3 +13,9 @@ repos:
       - id: ruff
         args: [ --fix ]
       - id: ruff-format
+
+  - repo: https://github.com/MarketSquare/robotframework-robocop
+    rev: v8.1.1
+    hooks:
+      - id: robocop
+      - id: robocop-format
