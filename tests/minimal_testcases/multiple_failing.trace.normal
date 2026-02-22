@@ -1,0 +1,20 @@
+TEST FAILED: Multiple Failing.Failing Testcase 1
+════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the first failing testcase')
+  I Starting the first failing testcase
+  ✓ PASS     0s
+▶ BuiltIn.Fail('This testcase failed')
+  F This testcase failed
+  ✗ FAIL     0s
+
+TEST FAILED: Multiple Failing.Failing Testcase 2
+════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the second failing testcase')
+  I Starting the second failing testcase
+  ✓ PASS     0s
+▶ BuiltIn.Should Be Equal('${False}', '${True}')
+  F False != True
+  ✗ FAIL     0s
+
+RUN COMPLETE: 2 tests, 2 completed (0 passed, 0 skipped, 2 failed).
+Total elapsed:  0s.

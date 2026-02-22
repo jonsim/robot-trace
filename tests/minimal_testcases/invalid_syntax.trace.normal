@@ -1,0 +1,9 @@
+TEST FAILED: Invalid Syntax.Invalid Syntax
+══════════════════════════════════════════
+▶ BuiltIn.Log('In the invalid syntax testcase')
+  I In the invalid syntax testcase
+  ✓ PASS     0s
+F END is not allowed in this context.
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+Total elapsed:  0s.

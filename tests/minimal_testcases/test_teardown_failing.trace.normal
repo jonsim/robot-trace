@@ -1,0 +1,16 @@
+TEST FAILED: Test Teardown Failing.Test Case 1
+══════════════════════════════════════════════
+▶ BuiltIn.Log('In Test Case 1')
+  I In Test Case 1
+  ✓ PASS     0s
+▶ Do Test Teardown()
+  ▶ BuiltIn.Log('Doing test teardown')
+    I Doing test teardown
+    ✓ PASS     0s
+  ▶ BuiltIn.Fail('The keyword failed')
+    F The keyword failed
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+Total elapsed:  0s.

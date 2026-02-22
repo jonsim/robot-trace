@@ -1,0 +1,11 @@
+TEST PASSED WITH ERRORS: Log Error.Log Error
+════════════════════════════════════════════
+▶ BuiltIn.Log('In the erroring testcase')
+  I In the erroring testcase
+  ✓ PASS     0s
+▶ BuiltIn.Log('This testcase errored', 'level=ERROR')
+  E This testcase errored
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised errors.
+Total elapsed:  0s.

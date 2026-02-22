@@ -33,14 +33,15 @@ pre-commit install
 
 ### 5. Running locally
 After installing in editable mode, you can test your changes by running the CLI
-against the sample test cases provided in the `testcases/` folder:
+against the sample test cases provided in the `tests/minimal_testcases`
+directory:
 ```sh
-robot-cli testcases
+robot-cli tests/minimal_testcases
 ```
 
 Alternatively, try running it directly as a module:
 ```sh
-robot --listener CLIProgress --console=none testcases
+robot --listener CLIProgress --console=none tests/minimal_testcases
 ```
 
 ### 6. Running tests
@@ -55,10 +56,14 @@ coverage run -m unittest discover tests/unit
 coverage report -m
 ```
 
+To run the system tests:
+```sh
+robot tests/system
+```
+
 
 ## Submitting Changes
 1. Make your changes in a new branch.
-2. Ensure you have run tests locally (e.g. against the provided `testcases` or
-   any new test suites you created).
+2. Ensure you have run the unit and system tests locally.
 3. Ensure that all `pre-commit` hooks pass successfully.
 4. Open a Pull Request!
