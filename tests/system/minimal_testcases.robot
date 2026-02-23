@@ -32,6 +32,8 @@ nested_keywords_1                   nested_keywords_1
 nested_keywords_2                   nested_keywords_2
 nested_keywords_3                   nested_keywords_3
 nested_keywords_failing             nested_keywords_failing             expected_rc=1
+run_keywords_failing                run_keywords_failing                expected_rc=1
+run_keywords_passing                run_keywords_passing
 suite_setup_failing                 suite_setup_failing                 expected_rc=1
 suite_setup_failing_testcase        suite_setup_failing_testcase        expected_rc=1
 suite_setup_passing                 suite_setup_passing
