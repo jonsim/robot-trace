@@ -482,7 +482,8 @@ class RobotTrace:
                     status_text = status_color(status_text)
                 suite_name = attributes["longname"]
                 status_line = f"{status_text}: {suite_name}"
-                underline = "═" * ANSI.len(status_line)
+                underline_length = min(self.terminal_width, ANSI.len(status_line))
+                underline = "═" * underline_length
                 if not trace:
                     trace = attributes["message"] + "\n"
                 trace = f"{status_line}\n{underline}\n{trace}"
@@ -536,7 +537,8 @@ class RobotTrace:
                     status_text = status_color(status_text)
                 test_name = attributes["longname"]
                 status_line = f"{status_text}: {test_name}"
-                underline = "═" * ANSI.len(status_line)
+                underline_length = min(self.terminal_width, ANSI.len(status_line))
+                underline = "═" * underline_length
                 if not trace:
                     trace = attributes["message"] + "\n"
                 trace = f"{status_line}\n{underline}\n{trace}"
