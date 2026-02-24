@@ -108,34 +108,35 @@ You may also consider calling `robot` or `robot-trace` with:
 
 
 ## Example Output
+![](https://raw.githubusercontent.com/jonsim/robot-trace/main/output_demo.gif)
+
+You can also redirect the output to a file to get the same output without the
+live progress reporting:
 ```sh
-$ robot-trace tests/minimal_testcases
-TEST FAILED: Nested Keywords.Nested Failing Test Case
-═════════════════════════════════════════════════════
-▶ Level Two Keyword('should_fail=${True}')
-  ▶ BuiltIn.Log('In the level two keyword')
-    I In the level two keyword
+$ robot-trace tests/example | cat
+TEST FAILED: Example.Nested Keywords Failing.Nested Failing Test Case
+═════════════════════════════════════════════════════════════════════
+▶ Level One Keyword()
+  ▶ BuiltIn.Log('In the level one keyword')
+    I In the level one keyword
     ✓ PASS     0s
-  ▶ Level Three Keyword()
-    ▶ BuiltIn.Log('In the level three keyword')
-      I In the level three keyword
+  ▶ Level Two Keyword()
+    ▶ BuiltIn.Log('In the level two keyword')
+      I In the level two keyword
       ✓ PASS     0s
-    ✓ PASS     0s
-  ▶ Failing Keyword()
-    ▶ BuiltIn.Log('In the failing keyword')
-      I In the failing keyword
-      ✓ PASS     0s
-    ▶ BuiltIn.Fail('This keyword failed')
-      F This keyword failed
+    ▶ Level Three Keyword()
+      ▶ BuiltIn.Log('In the level three keyword')
+        I In the level three keyword
+        ✓ PASS     0s
+      ▶ BuiltIn.Fail('This keyword failed')
+        F This keyword failed
+        ✗ FAIL     0s
       ✗ FAIL     0s
     ✗ FAIL     0s
   ✗ FAIL     0s
 
-┌──────────────────────────────────────────────────────────────────────┐
-│ [SUITE  2/ 2] Suite 2                                                │
-│ [TEST 11/16] Test Case 3 - Slow               (elapsed  4s, ETA  3s) │
-│ [Sleep]  '${DELAY_LONG}'                                             │
-└──────────────────────────────────────────────────────────────────────┘
+RUN COMPLETE: 13 tests, 13 completed (12 passed, 0 skipped, 1 failed).
+Total elapsed:  3s.
 ```
 
 ## Requirements
