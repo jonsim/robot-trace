@@ -1,17 +1,19 @@
-Logged from test stdout: Message sent to the console stdout
-Logged from test stderr: Message sent to the console stderr
-Logged from test stdout: A different message sent to the console
-TEST PASSED: Log Console.Log To The Console
-═══════════════════════════════════════════
+SUITE: Log Console
+══════════════════
+TEST: Log Console.Log To The Console
+════════════════════════════════════
 ▶ BuiltIn.Log('In the console testcase')
   I In the console testcase
   ✓ PASS     0s
 ▶ BuiltIn.Log To Console('Message sent to the console stdout')
+Logged from test stdout: Message sent to the console stdout
   ✓ PASS     0s
 ▶ BuiltIn.Log To Console('Message sent to the console stderr', 'stream=stderr')
+Logged from test stderr: Message sent to the console stderr
   ✓ PASS     0s
 ▶ BuiltIn.Log('A different message sent to the console', 'level=CONSOLE')
   I A different message sent to the console
+Logged from test stdout: A different message sent to the console
   ✓ PASS     0s
 
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).

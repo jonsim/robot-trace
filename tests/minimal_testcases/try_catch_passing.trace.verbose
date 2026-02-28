@@ -1,5 +1,7 @@
-TEST PASSED: Try Catch Passing.TRY-CATCH Passing Branch
-═══════════════════════════════════════════════════════
+SUITE: Try Catch Passing
+════════════════════════
+TEST: Try Catch Passing.TRY-CATCH Passing Branch
+════════════════════════════════════════════════
 ▶ TRY
   ▶ BuiltIn.Log('Entered TRY')
     I Entered TRY
@@ -13,6 +15,10 @@ TEST PASSED: Try Catch Passing.TRY-CATCH Passing Branch
       <class 'str'>
     ✓ PASS     0s
   ✓ PASS     0s
+▶ EXCEPT
+  ▶ BuiltIn.Log('Entered EXCEPT')
+    ⊘ NOT RUN     0s
+  ⊘ NOT RUN     0s
 
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
 Total elapsed:  0s.

@@ -1,11 +1,15 @@
-TEST SKIPPED: Basic Skipping.Skipping Testcase
-══════════════════════════════════════════════
+SUITE: Basic Skipping
+═════════════════════
+TEST: Basic Skipping.Skipping Testcase
+══════════════════════════════════════
 ▶ BuiltIn.Log('Starting the skipping testcase')
   I Starting the skipping testcase
   ✓ PASS     0s
 ▶ BuiltIn.Skip('This testcase was skipped')
   S This testcase was skipped
   → SKIP     0s
+▶ BuiltIn.Log('Unreachable line')
+  ⊘ NOT RUN     0s
 
 RUN COMPLETE: 1 test, 1 completed (0 passed, 1 skipped, 0 failed).
 Total elapsed:  0s.

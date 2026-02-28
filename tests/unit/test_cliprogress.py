@@ -422,7 +422,7 @@ class TestRobotTraceLifecycle(RobotTraceTestBase):
         patcher = patch("sys.stdout", new_callable=StringIO)
         self.mock_stdout = patcher.start()
 
-        self.listener = RobotTrace(console_progress="NONE", verbosity="DEBUG")
+        self.listener = RobotTrace(console_progress="NONE", verbosity="NORMAL")
 
     def tearDown(self):
         patch.stopall()
@@ -478,7 +478,7 @@ class TestRobotTraceLifecycle(RobotTraceTestBase):
 class TestRobotTraceKeywords(RobotTraceTestBase):
     def setUp(self):
         super().setUp()
-        self.listener = RobotTrace(console_progress="NONE", verbosity="DEBUG")
+        self.listener = RobotTrace(console_progress="NONE", verbosity="NORMAL")
 
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
         self.listener.start_suite("My_Suite", suite_attributes)
@@ -518,7 +518,7 @@ class TestRobotTraceLogging(RobotTraceTestBase):
     def setUp(self):
         super().setUp()
         self.listener = RobotTrace(
-            console_progress="NONE", verbosity="DEBUG", colors="OFF"
+            console_progress="NONE", verbosity="NORMAL", colors="OFF"
         )
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
         self.listener.start_suite("My_Suite", suite_attributes)
@@ -577,3 +577,34 @@ class TestRobotTraceClose(RobotTraceTestBase):
         listener.close()
         output = sys.__stdout__.getvalue()
         self.assertIn("RUN COMPLETE", output)
+
+
+class TestLiveTracePrinter(RobotTraceTestBase):
+    def test_live_trace_printer_output(self):
+        import sys
+
+        listener = RobotTrace(console_progress="NONE", verbosity="DEBUG", colors="OFF")
+
+        listener.start_suite(
+            "My_Suite",
+            {"suites": [1], "totaltests": 1, "longname": "My_Suite", "status": ""},
+        )
+        listener.start_test("My Test", {"longname": "My_Suite.My Test", "status": ""})
+
+        listener.start_keyword(
+            "BuiltIn.Log", {"type": "KEYWORD", "args": ["Hello"], "kwname": "Log"}
+        )
+        listener.log_message({"level": "INFO", "message": "Hello world\nLine 2"})
+        listener.end_keyword("BuiltIn.Log", {"status": "PASS", "elapsedtime": 1000})
+
+        listener.end_test(
+            "My Test", {"status": "PASS", "longname": "My_Suite.My Test", "message": ""}
+        )
+
+        output = sys.__stdout__.getvalue()
+        self.assertIn("SUITE: My_Suite", output)
+        self.assertIn("TEST: My_Suite.My Test", output)
+        self.assertIn("▶ BuiltIn.Log('Hello')", output)
+        self.assertIn("  I Hello world", output)
+        self.assertIn("    Line 2", output)
+        self.assertIn("  ✓ PASS", output)

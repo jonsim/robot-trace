@@ -392,6 +392,133 @@ class BufferedTracePrinter:
         self.print(f"Logged from test {stream}: {message.rstrip()}")
 
 
+class LiveTracePrinter:
+    def __init__(
+        self,
+        print_passed: bool,
+        print_skipped: bool,
+        print_warned: bool,
+        print_errored: bool,
+        print_failed: bool,
+        colors: bool,
+        width: int,
+        print_callback,
+    ):
+        self.print_passed = print_passed
+        self.print_skipped = print_skipped
+        self.print_warned = print_warned
+        self.print_errored = print_errored
+        self.print_failed = print_failed
+        self.colors = colors
+        self.width = width
+        self.print = print_callback
+        self.indent = 0
+
+    def start_suite(self, name, attributes):
+        suite_name = attributes["longname"]
+        status_line = f"SUITE: {suite_name}"
+        underline_length = min(self.width, ANSI.len(status_line))
+        underline = "═" * underline_length
+        trace = f"{status_line}\n{underline}"
+        self.print(trace)
+
+    def end_suite(self, name, attributes):
+        pass
+
+    def start_test(self, name, attributes):
+        test_name = attributes["longname"]
+        status_line = f"TEST: {test_name}"
+        underline_length = min(self.width, ANSI.len(status_line))
+        underline = "═" * underline_length
+        trace = f"{status_line}\n{underline}"
+        self.print(trace)
+
+    def end_test(self, name, attributes):
+        self.print("")
+
+    def start_keyword(self, in_test: bool, name, attributes):
+        kwtype = attributes["type"]
+        args = attributes["args"]
+        if kwtype != "KEYWORD":
+            name = f"{kwtype}    {name}" if name else kwtype
+        if args or kwtype in {"KEYWORD", "SETUP", "TEARDOWN"}:
+            argstr = "(" + ", ".join(repr(a) for a in args) + ")"
+        else:
+            argstr = ""
+        trace_line = f"▶ {name}{argstr}"
+        self.print(" " * self.indent * 2 + trace_line)
+        self.indent += 1
+
+    def end_keyword(self, in_test: bool, name, attributes):
+        self.indent -= 1
+
+        status = attributes["status"]
+
+        elapsed_time_ms = attributes["elapsedtime"]
+        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
+
+        keyword_trace = "  "
+        if status == "PASS":
+            status_text = "✓ PASS"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "SKIP":
+            status_text = "→ SKIP"
+            if self.colors:
+                status_text = ANSI.Fore.YELLOW(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "FAIL":
+            status_text = "✗ FAIL"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_RED(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "NOT RUN":
+            status_text = "⊘ NOT RUN"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_BLACK(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        else:
+            keyword_trace += f"? {status}    {elapsed}"
+
+        self.print(" " * self.indent * 2 + keyword_trace)
+
+    def log_message(self, in_test: bool, attributes):
+        level = attributes["level"]
+        text = attributes["message"]
+
+        indent = " " * self.indent * 2
+        level_initial = level[0].upper()
+        text_lines = text.splitlines()
+        lines = []
+        # First line gets level initial
+        lines.append(f"{indent}{level_initial} {text_lines[0]}")
+        # Remaining lines align without repeating the level
+        for text_line in text_lines[1:]:
+            lines.append(f"{indent}  {text_line}")
+
+        if self.colors:
+            if level == "ERROR":
+                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
+            elif level == "FAIL":
+                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
+            elif level == "WARN":
+                lines = [ANSI.Fore.BRIGHT_YELLOW(line) for line in lines]
+            elif level == "SKIP":
+                lines = [ANSI.Fore.YELLOW(line) for line in lines]
+            elif level == "INFO":
+                lines = [ANSI.Fore.BRIGHT_BLACK(line) for line in lines]
+            elif level == "DEBUG" or level == "TRACE":
+                lines = [ANSI.Fore.WHITE(line) for line in lines]
+
+        self.print("\n".join(lines))
+
+    def log_message_to_console(
+        self, in_test: bool, message: str, stream: Literal["stdout", "stderr"]
+    ):
+        self.print(f"Logged from test {stream}: {message.rstrip()}")
+
+
 class TestStatistics:
     def __init__(self):
         self.top_level_test_count: int | None = None
@@ -727,6 +854,7 @@ class RobotTrace:
             progress_stream = None
 
         # Configure output based on verbosity.
+        self.live_output = self.verbosity >= Verbosity.DEBUG
         self.print_passed = self.verbosity >= Verbosity.DEBUG
         self.print_skipped = self.verbosity >= Verbosity.DEBUG
         self.print_warned = self.verbosity >= Verbosity.NORMAL
@@ -740,16 +868,28 @@ class RobotTrace:
         self.progress_box = ProgressBox(progress_stream, self.terminal_width)
         self.stats = TestStatistics()
         self.timings = TestTimings()
-        self.result_printer = BufferedTracePrinter(
-            print_passed=self.print_passed,
-            print_skipped=self.print_skipped,
-            print_warned=self.print_warned,
-            print_errored=self.print_errored,
-            print_failed=self.print_failed,
-            colors=self.colors,
-            width=self.terminal_width,
-            print_callback=self._print_trace,
-        )
+        if self.live_output:
+            self.result_printer = LiveTracePrinter(
+                print_passed=self.print_passed,
+                print_skipped=self.print_skipped,
+                print_warned=self.print_warned,
+                print_errored=self.print_errored,
+                print_failed=self.print_failed,
+                colors=self.colors,
+                width=self.terminal_width,
+                print_callback=self._print_trace,
+            )
+        else:
+            self.result_printer = BufferedTracePrinter(
+                print_passed=self.print_passed,
+                print_skipped=self.print_skipped,
+                print_warned=self.print_warned,
+                print_errored=self.print_errored,
+                print_failed=self.print_failed,
+                colors=self.colors,
+                width=self.terminal_width,
+                print_callback=self._print_trace,
+            )
 
         # On Windows, import colorama if we're coloring output.
         if self.colors and sys.platform == "win32":

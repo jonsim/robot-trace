@@ -1,11 +1,11 @@
-TEST PASSED: Suite Teardown Passing.Test Case 1
-═══════════════════════════════════════════════
+SUITE: Suite Teardown Passing
+═════════════════════════════
+TEST: Suite Teardown Passing.Test Case 1
+════════════════════════════════════════
 ▶ BuiltIn.Log('In Test Case 1')
   I In Test Case 1
   ✓ PASS     0s
 
-SUITE PASSED: Suite Teardown Passing
-════════════════════════════════════
 ▶ TEARDOWN    Do Suite Teardown()
   ▶ BuiltIn.Log('Doing suite teardown')
     I Doing suite teardown
@@ -22,6 +22,5 @@ SUITE PASSED: Suite Teardown Passing
     I Suite teardown completed
     ✓ PASS     0s
   ✓ PASS     0s
-
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
 Total elapsed:  0s.

@@ -1,11 +1,11 @@
-TEST PASSED: Suite Teardown Warning.Test Case 1
-═══════════════════════════════════════════════
+SUITE: Suite Teardown Warning
+═════════════════════════════
+TEST: Suite Teardown Warning.Test Case 1
+════════════════════════════════════════
 ▶ BuiltIn.Log('In Test Case 1')
   I In Test Case 1
   ✓ PASS     0s
 
-SUITE PASSED WITH WARNINGS: Suite Teardown Warning
-══════════════════════════════════════════════════
 ▶ TEARDOWN    Do Suite Teardown()
   ▶ BuiltIn.Log('Doing suite teardown')
     I Doing suite teardown
@@ -22,7 +22,6 @@ SUITE PASSED WITH WARNINGS: Suite Teardown Warning
     W Suite teardown completed
     ✓ PASS     0s
   ✓ PASS     0s
-
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised warnings.
 
 Warning test:

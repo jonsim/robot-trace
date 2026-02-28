@@ -1,5 +1,7 @@
-TEST PASSED: Run Keywords Passing.Test That Calls Run Keywords
-══════════════════════════════════════════════════════════════
+SUITE: Run Keywords Passing
+═══════════════════════════
+TEST: Run Keywords Passing.Test That Calls Run Keywords
+═══════════════════════════════════════════════════════
 ▶ BuiltIn.Log('Starting the testcase')
   I Starting the testcase
   ✓ PASS     0s

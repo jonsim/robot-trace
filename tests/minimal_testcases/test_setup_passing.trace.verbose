@@ -1,5 +1,7 @@
-TEST PASSED: Test Setup Passing.Test Case 1
-═══════════════════════════════════════════
+SUITE: Test Setup Passing
+═════════════════════════
+TEST: Test Setup Passing.Test Case 1
+════════════════════════════════════
 ▶ SETUP    Do Test Setup()
   ▶ BuiltIn.Log('Doing test setup')
     I Doing test setup

@@ -1,5 +1,7 @@
-TEST PASSED WITH WARNINGS: Test Teardown Warning.Test Case 1
-════════════════════════════════════════════════════════════
+SUITE: Test Teardown Warning
+════════════════════════════
+TEST: Test Teardown Warning.Test Case 1
+═══════════════════════════════════════
 ▶ BuiltIn.Log('In Test Case 1')
   I In Test Case 1
   ✓ PASS     0s

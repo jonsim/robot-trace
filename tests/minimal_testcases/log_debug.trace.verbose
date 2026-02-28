@@ -1,5 +1,7 @@
-TEST PASSED: Log Debug.Log Debug
-════════════════════════════════
+SUITE: Log Debug
+════════════════
+TEST: Log Debug.Log Debug
+═════════════════════════
 ▶ BuiltIn.Log('In the debug testcase')
   I In the debug testcase
   ✓ PASS     0s

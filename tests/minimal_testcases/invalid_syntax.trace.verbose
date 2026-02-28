@@ -1,5 +1,7 @@
-TEST FAILED: Invalid Syntax.Invalid Syntax
-══════════════════════════════════════════
+SUITE: Invalid Syntax
+═════════════════════
+TEST: Invalid Syntax.Invalid Syntax
+═══════════════════════════════════
 ▶ BuiltIn.Log('In the invalid syntax testcase')
   I In the invalid syntax testcase
   ✓ PASS     0s

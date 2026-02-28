@@ -1,11 +1,5 @@
-TEST PASSED: Suite Setup Passing.Test Case 1
-════════════════════════════════════════════
-▶ BuiltIn.Log('In Test Case 1')
-  I In Test Case 1
-  ✓ PASS     0s
-
-SUITE PASSED: Suite Setup Passing
-═════════════════════════════════
+SUITE: Suite Setup Passing
+══════════════════════════
 ▶ SETUP    Do Suite Setup()
   ▶ BuiltIn.Log('Doing suite setup')
     I Doing suite setup
@@ -21,6 +15,11 @@ SUITE PASSED: Suite Setup Passing
   ▶ BuiltIn.Log('Suite setup completed')
     I Suite setup completed
     ✓ PASS     0s
+  ✓ PASS     0s
+TEST: Suite Setup Passing.Test Case 1
+═════════════════════════════════════
+▶ BuiltIn.Log('In Test Case 1')
+  I In Test Case 1
   ✓ PASS     0s
 
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).

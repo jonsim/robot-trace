@@ -1,5 +1,7 @@
-TEST PASSED: Log Multiline.Log Multiline
-════════════════════════════════════════
+SUITE: Log Multiline
+════════════════════
+TEST: Log Multiline.Log Multiline
+═════════════════════════════════
 ▶ BuiltIn.Log("In the multiline testcase\\nHere's a box:")
   I In the multiline testcase
     Here's a box:

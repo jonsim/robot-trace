@@ -1,5 +1,7 @@
-TEST PASSED: Try Catch Exception.TRY-CATCH Exception Branch
-═══════════════════════════════════════════════════════════
+SUITE: Try Catch Exception
+══════════════════════════
+TEST: Try Catch Exception.TRY-CATCH Exception Branch
+════════════════════════════════════════════════════
 ▶ TRY
   ▶ BuiltIn.Log('Entered TRY')
     I Entered TRY

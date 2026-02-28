@@ -1,5 +1,7 @@
-TEST FAILED: Test Setup Failing.Test Case 1
-═══════════════════════════════════════════
+SUITE: Test Setup Failing
+═════════════════════════
+TEST: Test Setup Failing.Test Case 1
+════════════════════════════════════
 ▶ SETUP    Do Test Setup()
   ▶ BuiltIn.Log('Doing test setup')
     I Doing test setup

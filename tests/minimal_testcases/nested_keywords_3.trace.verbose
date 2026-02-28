@@ -1,5 +1,7 @@
-TEST PASSED: Nested Keywords 3.Nested Passing Test Case
-═══════════════════════════════════════════════════════
+SUITE: Nested Keywords 3
+════════════════════════
+TEST: Nested Keywords 3.Nested Passing Test Case
+════════════════════════════════════════════════
 ▶ Level One Keyword()
   ▶ BuiltIn.Log('In the level one keyword')
     I In the level one keyword

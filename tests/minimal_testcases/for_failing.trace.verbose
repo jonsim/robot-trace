@@ -1,5 +1,7 @@
-TEST FAILED: For Failing.FOR Failing
-════════════════════════════════════
+SUITE: For Failing
+══════════════════
+TEST: For Failing.FOR Failing
+═════════════════════════════
 ▶ FOR    ${i}    IN RANGE    5
   ▶ ITERATION    ${i} = 0
     ▶ BuiltIn.Log('Iteration ${i}')

@@ -1,5 +1,15 @@
-TEST FAILED: If Else Failing.IF-ELSE Failing Branch
-═══════════════════════════════════════════════════
+SUITE: If Else Failing
+══════════════════════
+TEST: If Else Failing.IF-ELSE Failing Branch
+════════════════════════════════════════════
+▶ IF    1 > 2
+  ▶ BuiltIn.Log('NOT taken branch - should not appear')
+    ⊘ NOT RUN     0s
+  ▶ BuiltIn.Evaluate('1 + 1')
+    ⊘ NOT RUN     0s
+  ▶ BuiltIn.Should Be Equal As Numbers('${result}', '2')
+    ⊘ NOT RUN     0s
+  ⊘ NOT RUN     0s
 ▶ ELSE
   ▶ BuiltIn.Log('Taken branch - should appear')
     I Taken branch - should appear

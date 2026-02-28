@@ -1,5 +1,7 @@
-TEST FAILED: Suite Teardown Failing Testcase.Test Case 1
-════════════════════════════════════════════════════════
+SUITE: Suite Teardown Failing Testcase
+══════════════════════════════════════
+TEST: Suite Teardown Failing Testcase.Test Case 1
+═════════════════════════════════════════════════
 ▶ BuiltIn.Log('In Test Case 1')
   I In Test Case 1
   ✓ PASS     0s
@@ -7,8 +9,6 @@ TEST FAILED: Suite Teardown Failing Testcase.Test Case 1
   F Test case always fails
   ✗ FAIL     0s
 
-SUITE FAILED: Suite Teardown Failing Testcase
-═════════════════════════════════════════════
 ▶ TEARDOWN    Do Suite Teardown()
   ▶ BuiltIn.Log('Doing suite teardown')
     I Doing suite teardown
@@ -25,7 +25,6 @@ SUITE FAILED: Suite Teardown Failing Testcase
     I Suite teardown completed
     ✓ PASS     0s
   ✓ PASS     0s
-
 RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
 
 Failing test:

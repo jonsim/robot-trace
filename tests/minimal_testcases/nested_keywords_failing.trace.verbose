@@ -1,5 +1,7 @@
-TEST FAILED: Nested Keywords Failing.Nested Failing Test Case
-═════════════════════════════════════════════════════════════
+SUITE: Nested Keywords Failing
+══════════════════════════════
+TEST: Nested Keywords Failing.Nested Failing Test Case
+══════════════════════════════════════════════════════
 ▶ Level One Keyword()
   ▶ BuiltIn.Log('In the level one keyword')
     I In the level one keyword

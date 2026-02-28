@@ -1,5 +1,7 @@
-TEST PASSED: Basic Passing.Passing Testcase
-═══════════════════════════════════════════
+SUITE: Basic Passing
+════════════════════
+TEST: Basic Passing.Passing Testcase
+════════════════════════════════════
 ▶ BuiltIn.Log('Starting the passing testcase')
   I Starting the passing testcase
   ✓ PASS     0s

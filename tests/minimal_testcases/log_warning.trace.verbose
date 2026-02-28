@@ -1,5 +1,7 @@
-TEST PASSED WITH WARNINGS: Log Warning.Log Warning
-══════════════════════════════════════════════════
+SUITE: Log Warning
+══════════════════
+TEST: Log Warning.Log Warning
+═════════════════════════════
 ▶ BuiltIn.Log('In the warning testcase')
   I In the warning testcase
   ✓ PASS     0s

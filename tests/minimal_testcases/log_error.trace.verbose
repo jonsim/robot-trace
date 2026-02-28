@@ -1,5 +1,7 @@
-TEST PASSED WITH ERRORS: Log Error.Log Error
-════════════════════════════════════════════
+SUITE: Log Error
+════════════════
+TEST: Log Error.Log Error
+═════════════════════════
 ▶ BuiltIn.Log('In the erroring testcase')
   I In the erroring testcase
   ✓ PASS     0s

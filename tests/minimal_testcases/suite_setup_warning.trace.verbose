@@ -1,11 +1,5 @@
-TEST PASSED: Suite Setup Warning.Test Case 1
-════════════════════════════════════════════
-▶ BuiltIn.Log('In Test Case 1')
-  I In Test Case 1
-  ✓ PASS     0s
-
-SUITE PASSED WITH WARNINGS: Suite Setup Warning
-═══════════════════════════════════════════════
+SUITE: Suite Setup Warning
+══════════════════════════
 ▶ SETUP    Do Suite Setup()
   ▶ BuiltIn.Log('Doing suite setup')
     I Doing suite setup
@@ -21,6 +15,11 @@ SUITE PASSED WITH WARNINGS: Suite Setup Warning
   ▶ BuiltIn.Log('Suite setup completed', 'level=WARN')
     W Suite setup completed
     ✓ PASS     0s
+  ✓ PASS     0s
+TEST: Suite Setup Warning.Test Case 1
+═════════════════════════════════════
+▶ BuiltIn.Log('In Test Case 1')
+  I In Test Case 1
   ✓ PASS     0s
 
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised warnings.
