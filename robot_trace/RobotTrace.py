@@ -198,7 +198,7 @@ class TraceStack:
         self._stack.clear()
 
 
-class BufferedTracePrinter:
+class TracePrinter:
     def __init__(
         self,
         print_passed: bool,
@@ -218,6 +218,81 @@ class BufferedTracePrinter:
         self.colors = colors
         self.width = width
         self.print = print_callback
+
+    def log_message_to_console(
+        self, in_test: bool, message: str, stream: Literal["stdout", "stderr"]
+    ):
+        self.print(f"Logged from test {stream}: {message.rstrip()}")
+
+    def _format_banner(self, status_text: str, status_color, name: str) -> str:
+        if self.colors and status_color:
+            status_text = status_color(status_text)
+        status_line = f"{status_text}: {name}"
+        underline_length = min(self.width, ANSI.len(status_line))
+        underline = "═" * underline_length
+        return f"{status_line}\n{underline}"
+
+    def _format_keyword_header(self, name: str, attributes: dict) -> str:
+        kwtype = attributes["type"]
+        args = attributes["args"]
+        if kwtype != "KEYWORD":
+            name = f"{kwtype}    {name}" if name else kwtype
+        if args or kwtype in {"KEYWORD", "SETUP", "TEARDOWN"}:
+            argstr = "(" + ", ".join(repr(a) for a in args) + ")"
+        else:
+            argstr = ""
+        return f"▶ {name}{argstr}"
+
+    def _format_keyword_status(self, status: str, elapsed_time_ms: int) -> str:
+        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
+        if status == "PASS":
+            status_text = "✓ PASS"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
+            return f"  {status_text}    {elapsed}"
+        elif status == "SKIP":
+            status_text = "→ SKIP"
+            if self.colors:
+                status_text = ANSI.Fore.YELLOW(status_text)
+            return f"  {status_text}    {elapsed}"
+        elif status == "FAIL":
+            status_text = "✗ FAIL"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_RED(status_text)
+            return f"  {status_text}    {elapsed}"
+        elif status == "NOT RUN":
+            status_text = "⊘ NOT RUN"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_BLACK(status_text)
+            return f"  {status_text}    {elapsed}"
+        else:
+            return f"  ? {status}    {elapsed}"
+
+    def _format_log_message(self, level: str, text: str, indent: str = "") -> list[str]:
+        level_initial = level[0].upper()
+        text_lines = text.splitlines()
+        lines = []
+        lines.append(f"{indent}{level_initial} {text_lines[0]}")
+        for text_line in text_lines[1:]:
+            lines.append(f"{indent}  {text_line}")
+
+        if self.colors:
+            if level == "ERROR" or level == "FAIL":
+                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
+            elif level == "WARN":
+                lines = [ANSI.Fore.BRIGHT_YELLOW(line) for line in lines]
+            elif level == "SKIP":
+                lines = [ANSI.Fore.YELLOW(line) for line in lines]
+            elif level == "INFO":
+                lines = [ANSI.Fore.BRIGHT_BLACK(line) for line in lines]
+            elif level == "DEBUG" or level == "TRACE":
+                lines = [ANSI.Fore.WHITE(line) for line in lines]
+        return lines
+
+
+class BufferedTracePrinter(TracePrinter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.test_trace_stack = TraceStack("<prerun>")
         self.suite_trace_stack = TraceStack("<prerun>")
 
@@ -246,16 +321,12 @@ class BufferedTracePrinter:
                 status_text += " WITH WARNINGS"
                 status_color = ANSI.Fore.BRIGHT_YELLOW
             if should_print:
-                if self.colors and status_color:
-                    status_text = status_color(status_text)
-                suite_name = attributes["longname"]
-                status_line = f"{status_text}: {suite_name}"
-                underline_length = min(self.width, ANSI.len(status_line))
-                underline = "═" * underline_length
+                banner = self._format_banner(
+                    status_text, status_color, attributes["longname"]
+                )
                 if not trace:
                     trace = attributes["message"] + "\n"
-                trace = f"{status_line}\n{underline}\n{trace}"
-                self.print(trace)
+                self.print(f"{banner}\n{trace}")
 
     def start_test(self, name, attributes):
         test_name = attributes["longname"]
@@ -286,28 +357,16 @@ class BufferedTracePrinter:
                 status_text += " WITH WARNINGS"
                 status_color = ANSI.Fore.BRIGHT_YELLOW
             if should_print:
-                if self.colors and status_color:
-                    status_text = status_color(status_text)
-                test_name = attributes["longname"]
-                status_line = f"{status_text}: {test_name}"
-                underline_length = min(self.width, ANSI.len(status_line))
-                underline = "═" * underline_length
+                banner = self._format_banner(
+                    status_text, status_color, attributes["longname"]
+                )
                 if not trace:
                     trace = attributes["message"] + "\n"
-                trace = f"{status_line}\n{underline}\n{trace}"
-                self.print(trace)
+                self.print(f"{banner}\n{trace}")
 
     def start_keyword(self, in_test: bool, name, attributes):
         stack = self.test_trace_stack if in_test else self.suite_trace_stack
-        kwtype = attributes["type"]
-        args = attributes["args"]
-        if kwtype != "KEYWORD":
-            name = f"{kwtype}    {name}" if name else kwtype
-        if args or kwtype in {"KEYWORD", "SETUP", "TEARDOWN"}:
-            argstr = "(" + ", ".join(repr(a) for a in args) + ")"
-        else:
-            argstr = ""
-        trace_line = f"▶ {name}{argstr}"
+        trace_line = self._format_keyword_header(name, attributes)
         stack.push_keyword(trace_line)
 
     def end_keyword(self, in_test: bool, name, attributes):
@@ -322,28 +381,7 @@ class BufferedTracePrinter:
         # so the hierarchy appears in the trace.
         stack.flush()
 
-        elapsed_time_ms = attributes["elapsedtime"]
-        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
-
-        keyword_trace = "  "
-        if status == "PASS":
-            status_text = "✓ PASS"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "SKIP":
-            status_text = "→ SKIP"
-            if self.colors:
-                status_text = ANSI.Fore.YELLOW(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "FAIL":
-            status_text = "✗ FAIL"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_RED(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        else:
-            keyword_trace += f"? {status}    {elapsed}"
-
+        keyword_trace = self._format_keyword_status(status, attributes["elapsedtime"])
         stack.append_trace(keyword_trace)
 
     def log_message(self, in_test: bool, attributes):
@@ -354,29 +392,6 @@ class BufferedTracePrinter:
         stack = self.test_trace_stack if in_test else self.suite_trace_stack
         stack.flush(decrement_depth=False)
 
-        level_initial = level[0].upper()
-        text_lines = text.splitlines()
-        lines = []
-        # First line gets level initial
-        lines.append(f"{level_initial} {text_lines[0]}")
-        # Remaining lines align without repeating the level
-        for text_line in text_lines[1:]:
-            lines.append(f"  {text_line}")
-
-        if self.colors:
-            if level == "ERROR":
-                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
-            elif level == "FAIL":
-                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
-            elif level == "WARN":
-                lines = [ANSI.Fore.BRIGHT_YELLOW(line) for line in lines]
-            elif level == "SKIP":
-                lines = [ANSI.Fore.YELLOW(line) for line in lines]
-            elif level == "INFO":
-                lines = [ANSI.Fore.BRIGHT_BLACK(line) for line in lines]
-            elif level == "DEBUG" or level == "TRACE":
-                lines = [ANSI.Fore.WHITE(line) for line in lines]
-
         if level == "ERROR":
             stack.has_errors = True
         elif level == "WARN":
@@ -384,68 +399,33 @@ class BufferedTracePrinter:
         elif level == "FAIL":
             stack.has_failures = True
 
+        lines = self._format_log_message(level, text)
         stack.append_trace("\n".join(lines))
 
-    def log_message_to_console(
-        self, in_test: bool, message: str, stream: Literal["stdout", "stderr"]
-    ):
-        self.print(f"Logged from test {stream}: {message.rstrip()}")
 
-
-class LiveTracePrinter:
-    def __init__(
-        self,
-        print_passed: bool,
-        print_skipped: bool,
-        print_warned: bool,
-        print_errored: bool,
-        print_failed: bool,
-        colors: bool,
-        width: int,
-        print_callback,
-    ):
-        self.print_passed = print_passed
-        self.print_skipped = print_skipped
-        self.print_warned = print_warned
-        self.print_errored = print_errored
-        self.print_failed = print_failed
-        self.colors = colors
-        self.width = width
-        self.print = print_callback
+class LiveTracePrinter(TracePrinter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.indent = 0
 
     def start_suite(self, name, attributes):
         suite_name = attributes["longname"]
-        status_line = f"SUITE: {suite_name}"
-        underline_length = min(self.width, ANSI.len(status_line))
-        underline = "═" * underline_length
-        trace = f"{status_line}\n{underline}"
-        self.print(trace)
+        banner = self._format_banner("SUITE", None, suite_name)
+        self.print(banner)
 
     def end_suite(self, name, attributes):
         pass
 
     def start_test(self, name, attributes):
         test_name = attributes["longname"]
-        status_line = f"TEST: {test_name}"
-        underline_length = min(self.width, ANSI.len(status_line))
-        underline = "═" * underline_length
-        trace = f"{status_line}\n{underline}"
-        self.print(trace)
+        banner = self._format_banner("TEST", None, test_name)
+        self.print(banner)
 
     def end_test(self, name, attributes):
         self.print("")
 
     def start_keyword(self, in_test: bool, name, attributes):
-        kwtype = attributes["type"]
-        args = attributes["args"]
-        if kwtype != "KEYWORD":
-            name = f"{kwtype}    {name}" if name else kwtype
-        if args or kwtype in {"KEYWORD", "SETUP", "TEARDOWN"}:
-            argstr = "(" + ", ".join(repr(a) for a in args) + ")"
-        else:
-            argstr = ""
-        trace_line = f"▶ {name}{argstr}"
+        trace_line = self._format_keyword_header(name, attributes)
         self.print(" " * self.indent * 2 + trace_line)
         self.indent += 1
 
@@ -454,33 +434,7 @@ class LiveTracePrinter:
 
         status = attributes["status"]
 
-        elapsed_time_ms = attributes["elapsedtime"]
-        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
-
-        keyword_trace = "  "
-        if status == "PASS":
-            status_text = "✓ PASS"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "SKIP":
-            status_text = "→ SKIP"
-            if self.colors:
-                status_text = ANSI.Fore.YELLOW(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "FAIL":
-            status_text = "✗ FAIL"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_RED(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "NOT RUN":
-            status_text = "⊘ NOT RUN"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_BLACK(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        else:
-            keyword_trace += f"? {status}    {elapsed}"
-
+        keyword_trace = self._format_keyword_status(status, attributes["elapsedtime"])
         self.print(" " * self.indent * 2 + keyword_trace)
 
     def log_message(self, in_test: bool, attributes):
@@ -488,35 +442,8 @@ class LiveTracePrinter:
         text = attributes["message"]
 
         indent = " " * self.indent * 2
-        level_initial = level[0].upper()
-        text_lines = text.splitlines()
-        lines = []
-        # First line gets level initial
-        lines.append(f"{indent}{level_initial} {text_lines[0]}")
-        # Remaining lines align without repeating the level
-        for text_line in text_lines[1:]:
-            lines.append(f"{indent}  {text_line}")
-
-        if self.colors:
-            if level == "ERROR":
-                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
-            elif level == "FAIL":
-                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
-            elif level == "WARN":
-                lines = [ANSI.Fore.BRIGHT_YELLOW(line) for line in lines]
-            elif level == "SKIP":
-                lines = [ANSI.Fore.YELLOW(line) for line in lines]
-            elif level == "INFO":
-                lines = [ANSI.Fore.BRIGHT_BLACK(line) for line in lines]
-            elif level == "DEBUG" or level == "TRACE":
-                lines = [ANSI.Fore.WHITE(line) for line in lines]
-
+        lines = self._format_log_message(level, text, indent)
         self.print("\n".join(lines))
-
-    def log_message_to_console(
-        self, in_test: bool, message: str, stream: Literal["stdout", "stderr"]
-    ):
-        self.print(f"Logged from test {stream}: {message.rstrip()}")
 
 
 class TestStatistics:
