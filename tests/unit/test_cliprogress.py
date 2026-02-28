@@ -355,12 +355,12 @@ class TestProgressBox(unittest.TestCase):
 
     def test_draw_with_progress_bar(self):
         self.box.total_tasks = 10
-        self.box.completed_tasks = 5
+        self.box._task_statuses = ["PASS"] * 5
         self.stream.truncate(0)
         self.stream.seek(0)
         self.box.draw()
         output = self.stream.getvalue()
-        expected_bar = "┌────────┤" + "█" * 30 + "░" * 30 + "├────────┐"
+        expected_bar = "┌──────┤" + "█" * 32 + "░" * 32 + "├──────┐"
         self.assertIn(expected_bar, output)
 
     def test_progress_bar_narrow_terminal(self):
@@ -383,14 +383,14 @@ class TestProgressBox(unittest.TestCase):
             mock_clear.reset_mock()
             mock_draw.reset_mock()
 
-            self.box.completed_tasks = 2
+            self.box.add_task_status("PASS")
             mock_clear.assert_called_once()
             mock_draw.assert_called_once()
 
             # No redraw if value unchanged
             mock_clear.reset_mock()
             mock_draw.reset_mock()
-            self.box.completed_tasks = 2
+            self.box._task_statuses = ["PASS"] * 2
             mock_clear.assert_not_called()
             mock_draw.assert_not_called()
 
@@ -455,7 +455,7 @@ class TestRobotTraceLifecycle(RobotTraceTestBase):
         self.listener.end_test("My Test", end_test_attributes)
         self.assertFalse(self.listener.in_test)
         self.assertEqual(len(self.listener.stats.passed_tests), 1)
-        self.assertEqual(self.listener.progress_box.completed_tasks, 1)
+        self.assertEqual(self.listener.progress_box._task_statuses, ["PASS"])
 
     def test_test_lifecycle_fail_with_errors(self):
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}

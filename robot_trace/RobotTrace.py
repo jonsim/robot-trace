@@ -608,7 +608,7 @@ class ProgressBox:
         self._lines = ["", "", ""]
         self._display_progress_bar = width >= 40
         self._total_tasks = None
-        self._completed_tasks = 0
+        self._task_statuses = []
 
     def draw(self):
         if not self.stream:
@@ -617,18 +617,18 @@ class ProgressBox:
         if self._total_tasks is not None and self._display_progress_bar:
             # If we know the total number of tasks we will execute, draw the
             # progress bar at the top of the box.
-            bar_length = self.width - 20
-            completion = self._completed_tasks / self._total_tasks
+            bar_length = self.width - 16
+            completion = len(self._task_statuses) / self._total_tasks
             bar_completed = int(completion * bar_length)
             bar_remaining = bar_length - bar_completed
             self.stream.write(
                 "┌"
-                + "─" * 8
+                + "─" * 6
                 + "┤"
                 + "█" * bar_completed
                 + "░" * bar_remaining
                 + "├"
-                + "─" * 8
+                + "─" * 6
                 + "┐\n"
             )
         else:
@@ -657,18 +657,10 @@ class ProgressBox:
             self.clear()
             self.draw()
 
-    @property
-    def completed_tasks(self) -> int:
-        return self._completed_tasks
-
-    @completed_tasks.setter
-    def completed_tasks(self, value: int):
-        assert value >= 0, "completed_tasks must be non-negative"
-        old_value = self._completed_tasks
-        self._completed_tasks = value
-        if old_value != value:
-            self.clear()
-            self.draw()
+    def add_task_status(self, status: str):
+        self._task_statuses.append(status)
+        self.clear()
+        self.draw()
 
     def clear(self):
         if not self.stream:
@@ -940,7 +932,7 @@ class RobotTrace:
     def end_test(self, name, attributes):
         self.stats.end_test(name, attributes)
         self.timings.end_test()
-        self.progress_box.completed_tasks += 1
+        self.progress_box.add_task_status(attributes["status"])
         self.progress_box.write_line(1)
         self.result_printer.end_test(name, attributes)
 
