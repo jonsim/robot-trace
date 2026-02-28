@@ -1,6 +1,6 @@
 [project]
 name = "robotframework-trace"
-version = "1.0.3"
+version = "1.0.4"
 description = "Alternative CLI for Robot Framework"
 readme = "README.md"
 authors = [{ name = "Jonathan Simmonds", email = "jon@jonsim.com" }]
