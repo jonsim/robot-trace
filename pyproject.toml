@@ -46,6 +46,9 @@ indent-style = "space"
 # In order to support older RobotFramework versions we deliberately use
 # deprecated keywords (in this case, VAR).
 ignore = ["VAR05", "DEPR05"]
+configure = [
+    "too-many-calls-in-keyword.max_calls=20"
+]
 
 [tool.robocop.lint.per_file_ignores]
 "tests/minimal_testcases/*" = ["DOC01", "DOC02", "DOC03", "DOC04"]

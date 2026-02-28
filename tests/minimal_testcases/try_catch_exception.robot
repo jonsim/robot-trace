@@ -1,5 +1,5 @@
 *** Test Cases ***
-TRY-CATCH Failing Branch
+TRY-CATCH Exception Branch
     TRY
         Log    Entered TRY
         ${result}=    Evaluate    1 + 1
