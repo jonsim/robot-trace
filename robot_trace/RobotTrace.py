@@ -301,6 +301,64 @@ class TestTimings:
         return "unknown"
 
 
+class ProgressBox:
+    def __init__(self, stream, width: int = 120):
+        self.stream = stream
+        self.width = width
+        self._lines = ["", "", ""]
+
+    def draw(self):
+        if not self.stream:
+            return
+        text_width = self.width - 4
+        self.stream.write("┌" + "─" * (self.width - 2) + "┐\n")
+        for i in range(3):
+            self.stream.write(f"│ {self._lines[i]:<{text_width}.{text_width}} │\n")
+        self.stream.write("└" + "─" * (self.width - 2) + "┘")
+        self.stream.flush()
+
+    def clear(self):
+        if not self.stream:
+            return
+        # Clear the current line and move the cursor up. Do this 5 times to
+        # clear the entire box (3 lines of text + top and bottom borders).
+        for _ in range(4):
+            self.stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.UP())
+        # Clear the final line and reset the cursor to the start of the line.
+        self.stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.HOME)
+        self.stream.flush()
+
+    def write_line(self, line_no: int, left_text: str = "", right_text: str = ""):
+        if not self.stream:
+            return
+        # Format the left and right text into a single line. Right text takes
+        # priority. Truncate left text with '...' if necessary.
+        text_width = self.width - 4
+        right_len = len(right_text)
+        max_left = text_width - right_len - 1 if right_len > 0 else text_width
+        max_left = max(0, max_left)
+        if len(left_text) > max_left:
+            if max_left >= 3:
+                left_text = left_text[: max_left - 3] + "..."
+            else:
+                left_text = left_text[:max_left]
+        padding = max(0, text_width - len(left_text) - right_len)
+        text = f"{left_text}{' ' * padding}{right_text}"
+
+        # Move cursor to the line inside the box and write the text.
+        # For line 0, we want to move up 3 lines (to the first empty line in the box).
+        # For line 1, we want to move up 2 lines.
+        # For line 2, we want to move up 1 line.
+        assert line_no >= 0 and line_no < 3, "line_no must be between 0 and 2"
+        self._lines[line_no] = text
+        line_offset = 3 - line_no
+        self.stream.write(ANSI.Cursor.UP(line_offset))
+        self.stream.write(ANSI.Cursor.HOME + f"│ {text} │")
+        # Move cursor back down to the bottom of the box.
+        self.stream.write(ANSI.Cursor.DOWN(line_offset))
+        self.stream.flush()
+
+
 class RobotTrace:
     ROBOT_LISTENER_API_VERSION = 2
 
@@ -334,17 +392,17 @@ class RobotTrace:
         console_progress = console_progress.upper()
         if console_progress == "AUTO":
             if sys.stdout.isatty():
-                self.progress_stream = sys.stdout
+                progress_stream = sys.stdout
             elif sys.stderr.isatty():
-                self.progress_stream = sys.stderr
+                progress_stream = sys.stderr
             else:
-                self.progress_stream = None
+                progress_stream = None
         elif console_progress == "STDOUT":
-            self.progress_stream = sys.stdout
+            progress_stream = sys.stdout
         elif console_progress == "STDERR":
-            self.progress_stream = sys.stderr
+            progress_stream = sys.stderr
         else:  # Assume NONE.
-            self.progress_stream = None
+            progress_stream = None
 
         # Configure output based on verbosity.
         self.print_passed = self.verbosity >= Verbosity.DEBUG
@@ -357,7 +415,7 @@ class RobotTrace:
         self.terminal_width = min(
             shutil.get_terminal_size(fallback=(width, 40)).columns, width
         )
-        self.progress_lines = ["", "", ""]
+        self.progress_box = ProgressBox(progress_stream, self.terminal_width)
         self.stats = TestStatistics()
         self.timings = TestTimings()
         self.test_trace_stack = TraceStack()
@@ -370,7 +428,7 @@ class RobotTrace:
             colorama.just_fix_windows_console()
 
         # Finally, prepare the console interface.
-        self._draw_progress_box()
+        self.progress_box.draw()
 
     # ------------------------------------------------------------------ helpers
 
@@ -400,69 +458,14 @@ class RobotTrace:
             return res.title()
         return res
 
-    def _draw_progress_box(self):
-        if not self.progress_stream:
-            return
-        text_width = self.terminal_width - 4
-        self.progress_stream.write("┌" + "─" * (self.terminal_width - 2) + "┐\n")
-        for i in range(3):
-            self.progress_stream.write(
-                f"│ {self.progress_lines[i]:<{text_width}.{text_width}} │\n"
-            )
-        self.progress_stream.write("└" + "─" * (self.terminal_width - 2) + "┘")
-        self.progress_stream.flush()
-
-    def _clear_progress_box(self):
-        if not self.progress_stream:
-            return
-        # Clear the current line and move the cursor up. Do this 5 times to
-        # clear the entire box (3 lines of text + top and bottom borders).
-        for _ in range(4):
-            self.progress_stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.UP())
-        # Clear the final line and reset the cursor to the start of the line.
-        self.progress_stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.HOME)
-        self.progress_stream.flush()
-
-    def _write_progress_line(
-        self, line_no: int, left_text: str = "", right_text: str = ""
-    ):
-        if not self.progress_stream:
-            return
-        # Format the left and right text into a single line. Right text takes
-        # priority. Truncate left text with '...' if necessary.
-        text_width = self.terminal_width - 4
-        right_len = len(right_text)
-        max_left = text_width - right_len - 1 if right_len > 0 else text_width
-        max_left = max(0, max_left)
-        if len(left_text) > max_left:
-            if max_left >= 3:
-                left_text = left_text[: max_left - 3] + "..."
-            else:
-                left_text = left_text[:max_left]
-        padding = max(0, text_width - len(left_text) - right_len)
-        text = f"{left_text}{' ' * padding}{right_text}"
-
-        # Move cursor to the line inside the box and write the text.
-        # For line 0, we want to move up 3 lines (to the first empty line in the box).
-        # For line 1, we want to move up 2 lines.
-        # For line 2, we want to move up 1 line.
-        assert line_no >= 0 and line_no < 3, "line_no must be between 0 and 2"
-        self.progress_lines[line_no] = text
-        line_offset = 3 - line_no
-        self.progress_stream.write(ANSI.Cursor.UP(line_offset))
-        self.progress_stream.write(ANSI.Cursor.HOME + f"│ {text} │")
-        # Move cursor back down to the bottom of the box.
-        self.progress_stream.write(ANSI.Cursor.DOWN(line_offset))
-        self.progress_stream.flush()
-
     def _print_trace(self, text: str):
         # First clear the progress box, so we don't have to worry about
         # interleaving with the trace output.
-        self._clear_progress_box()
+        self.progress_box.clear()
         # Then print the trace text as normal.
         self._writeln(text)
         # Finally redraw the progress box with the current test progress.
-        self._draw_progress_box()
+        self.progress_box.draw()
 
     # ------------------------------------------------------------------ suite
 
@@ -472,14 +475,14 @@ class RobotTrace:
         self.suite_trace_stack.clear()
 
         suite_name = attributes["longname"]
-        self._write_progress_line(
+        self.progress_box.write_line(
             0, f"[SUITE {self.stats.format_suite_progress()}] {suite_name}"
         )
 
     def end_suite(self, name, attributes):
         trace = self.suite_trace_stack.trace
 
-        self._write_progress_line(0)
+        self.progress_box.write_line(0)
 
         status = attributes["status"]
         status_text = ""
@@ -519,7 +522,7 @@ class RobotTrace:
         self.timings.start_test()
         self.test_trace_stack.clear()
 
-        self._write_progress_line(
+        self.progress_box.write_line(
             1,
             f"[TEST {self.stats.format_test_progress()}] {name}",
             f"(elapsed {self.timings.format_elapsed_time()}, "
@@ -530,7 +533,7 @@ class RobotTrace:
         trace = self.test_trace_stack.trace
         self.stats.end_test(name, attributes)
         self.timings.end_test()
-        self._write_progress_line(1)
+        self.progress_box.write_line(1)
         status = attributes["status"]
         if status != "NOT RUN":
             should_print = False
@@ -582,7 +585,7 @@ class RobotTrace:
         trace_line = f"▶ {name}{argstr}"
         stack.push_keyword(trace_line)
 
-        self._write_progress_line(2, f"[{kwname}]  {argstr}")
+        self.progress_box.write_line(2, f"[{kwname}]  {argstr}")
 
     def end_keyword(self, name, attributes):
         stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
@@ -590,7 +593,7 @@ class RobotTrace:
         if status == "NOT RUN":
             # Discard; the header was never flushed so it just disappears.
             stack.pop_keyword()
-            self._write_progress_line(2)
+            self.progress_box.write_line(2)
             return
 
         # Keyword ran - flush any pending ancestor headers (and this one)
@@ -621,7 +624,7 @@ class RobotTrace:
 
         stack.append_trace(keyword_trace)
 
-        self._write_progress_line(2)
+        self.progress_box.write_line(2)
 
     # ------------------------------------------------------------------ logging
 
@@ -670,7 +673,7 @@ class RobotTrace:
     # ------------------------------------------------------------------ close
 
     def close(self):
-        self._clear_progress_box()
+        self.progress_box.clear()
 
         if self.verbosity >= Verbosity.QUIET:
             self._writeln("RUN COMPLETE: " + self.stats.format_run_results())

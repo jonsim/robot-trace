@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from robot_trace.RobotTrace import (
     ANSI,
+    ProgressBox,
     RobotTrace,
     TestStatistics,
     TestTimings,
@@ -268,42 +269,47 @@ class TestRobotTraceInitialization(unittest.TestCase):
         listener = RobotTrace(console_progress="STDOUT")
         import sys
 
-        self.assertEqual(listener.progress_stream, sys.stdout)
+        self.assertEqual(listener.progress_box.stream, sys.stdout)
 
     @patch("sys.stderr", new_callable=StringIO)
     def test_console_progress_stderr(self, mock_stderr):
         listener = RobotTrace(console_progress="STDERR")
         import sys
 
-        self.assertEqual(listener.progress_stream, sys.stderr)
+        self.assertEqual(listener.progress_box.stream, sys.stderr)
 
 
-class TestRobotTraceLayoutAndProgressBox(unittest.TestCase):
+class TestProgressBox(unittest.TestCase):
     def setUp(self):
         from io import StringIO
 
         self.stream = StringIO()
-        self.listener = RobotTrace(console_progress="NONE", width=80)
-        self.listener.progress_stream = self.stream
+        self.box = ProgressBox(stream=self.stream, width=80)
 
-    def test_draw_progress_box(self):
-        self.listener._draw_progress_box()
+    def test_draw(self):
+        self.box.draw()
         output = self.stream.getvalue()
-        self.assertIn("┌" + "─" * (self.listener.terminal_width - 2) + "┐", output)
-        self.assertIn("└" + "─" * (self.listener.terminal_width - 2) + "┘", output)
+        self.assertIn("┌" + "─" * 78 + "┐", output)
+        self.assertIn("└" + "─" * 78 + "┘", output)
 
-    def test_write_progress_line_truncation(self):
+    def test_write_line_truncation(self):
         left = "A" * 100
         right = "B" * 10
-        self.listener._write_progress_line(0, left, right)
-        line = self.listener.progress_lines[0]
+        self.box.write_line(0, left, right)
+        line = self.box._lines[0]
         self.assertTrue(line.endswith("BBBBBBBBBB"))
-        expected_left_len = self.listener.terminal_width - 4 - 10 - 1
+        expected_left_len = self.box.width - 4 - 10 - 1
         self.assertTrue(line.startswith("A" * (expected_left_len - 3) + "..."))
 
-    def test_clear_progress_box(self):
-        self.listener._clear_progress_box()
+    def test_clear(self):
+        self.box.clear()
         self.assertIn(ANSI.Cursor.CLEAR_LINE, self.stream.getvalue())
+
+    def test_none_stream(self):
+        box_none = ProgressBox(None, 80)
+        box_none.draw()
+        box_none.write_line(0, "left")
+        box_none.clear()
 
 
 class TestRobotTraceLifecycle(unittest.TestCase):
