@@ -306,16 +306,69 @@ class ProgressBox:
         self.stream = stream
         self.width = width
         self._lines = ["", "", ""]
+        self._display_progress_bar = width >= 40
+        self._total_tasks = None
+        self._completed_tasks = 0
 
     def draw(self):
         if not self.stream:
             return
+
+        if self._total_tasks is not None and self._display_progress_bar:
+            # If we know the total number of tasks we will execute, draw the
+            # progress bar at the top of the box.
+            bar_length = self.width - 20
+            completion = self._completed_tasks / self._total_tasks
+            bar_completed = int(completion * bar_length)
+            bar_remaining = bar_length - bar_completed
+            self.stream.write(
+                "┌"
+                + "─" * 8
+                + "┤"
+                + "█" * bar_completed
+                + "░" * bar_remaining
+                + "├"
+                + "─" * 8
+                + "┐\n"
+            )
+        else:
+            # Otherwise just draw a solid top border.
+            self.stream.write("┌" + "─" * (self.width - 2) + "┐\n")
+
+        # Write the three lines of text.
         text_width = self.width - 4
-        self.stream.write("┌" + "─" * (self.width - 2) + "┐\n")
         for i in range(3):
             self.stream.write(f"│ {self._lines[i]:<{text_width}.{text_width}} │\n")
+
+        # Write the bottom border.
         self.stream.write("└" + "─" * (self.width - 2) + "┘")
         self.stream.flush()
+
+    @property
+    def total_tasks(self) -> int | None:
+        return self._total_tasks
+
+    @total_tasks.setter
+    def total_tasks(self, value: int):
+        assert value > 0, "total_tasks must be positive"
+        old_value = self._total_tasks
+        self._total_tasks = value
+        if old_value != value:
+            self.clear()
+            self.draw()
+
+    @property
+    def completed_tasks(self) -> int:
+        return self._completed_tasks
+
+    @completed_tasks.setter
+    def completed_tasks(self, value: int):
+        assert value >= 0, "completed_tasks must be non-negative"
+        old_value = self._completed_tasks
+        self._completed_tasks = value
+        if old_value != value:
+            self.clear()
+            self.draw()
 
     def clear(self):
         if not self.stream:
@@ -471,6 +524,8 @@ class RobotTrace:
 
     def start_suite(self, name, attributes):
         self.stats.start_suite(name, attributes)
+        if self.stats.top_level_test_count is not None:
+            self.progress_box.total_tasks = self.stats.top_level_test_count
         self.timings.start_suite()
         self.suite_trace_stack.clear()
 
@@ -533,6 +588,7 @@ class RobotTrace:
         trace = self.test_trace_stack.trace
         self.stats.end_test(name, attributes)
         self.timings.end_test()
+        self.progress_box.completed_tasks += 1
         self.progress_box.write_line(1)
         status = attributes["status"]
         if status != "NOT RUN":

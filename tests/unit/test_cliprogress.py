@@ -292,6 +292,47 @@ class TestProgressBox(unittest.TestCase):
         self.assertIn("┌" + "─" * 78 + "┐", output)
         self.assertIn("└" + "─" * 78 + "┘", output)
 
+    def test_draw_with_progress_bar(self):
+        self.box.total_tasks = 10
+        self.box.completed_tasks = 5
+        self.stream.truncate(0)
+        self.stream.seek(0)
+        self.box.draw()
+        output = self.stream.getvalue()
+        expected_bar = "┌────────┤" + "█" * 30 + "░" * 30 + "├────────┐"
+        self.assertIn(expected_bar, output)
+
+    def test_progress_bar_narrow_terminal(self):
+        box_narrow = ProgressBox(stream=self.stream, width=39)
+        self.stream.truncate(0)
+        self.stream.seek(0)
+        box_narrow.total_tasks = 10
+        output = self.stream.getvalue()
+        self.assertIn("┌" + "─" * 37 + "┐", output)
+
+    def test_setters_redraw(self):
+        with (
+            patch.object(self.box, "draw") as mock_draw,
+            patch.object(self.box, "clear") as mock_clear,
+        ):
+            self.box.total_tasks = 5
+            mock_clear.assert_called_once()
+            mock_draw.assert_called_once()
+
+            mock_clear.reset_mock()
+            mock_draw.reset_mock()
+
+            self.box.completed_tasks = 2
+            mock_clear.assert_called_once()
+            mock_draw.assert_called_once()
+
+            # No redraw if value unchanged
+            mock_clear.reset_mock()
+            mock_draw.reset_mock()
+            self.box.completed_tasks = 2
+            mock_clear.assert_not_called()
+            mock_draw.assert_not_called()
+
     def test_write_line_truncation(self):
         left = "A" * 100
         right = "B" * 10
@@ -337,6 +378,7 @@ class TestRobotTraceLifecycle(unittest.TestCase):
     def test_test_lifecycle(self):
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
         self.listener.start_suite("My_Suite", suite_attributes)
+        self.assertEqual(self.listener.progress_box.total_tasks, 1)
 
         test_attributes = {"longname": "My_Suite.My Test"}
         self.listener.start_test("My Test", test_attributes)
@@ -350,6 +392,7 @@ class TestRobotTraceLifecycle(unittest.TestCase):
         self.listener.end_test("My Test", end_test_attributes)
         self.assertFalse(self.listener.in_test)
         self.assertEqual(self.listener.stats.passed_tests, 1)
+        self.assertEqual(self.listener.progress_box.completed_tasks, 1)
 
     def test_test_lifecycle_fail_with_errors(self):
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
