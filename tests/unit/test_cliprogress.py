@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from robot_trace.RobotTrace import (
     ANSI,
+    InterceptStream,
     ProgressBox,
     RobotTrace,
     TestStatistics,
@@ -12,6 +13,25 @@ from robot_trace.RobotTrace import (
     Verbosity,
     _ANSICode,
 )
+
+
+class RobotTraceTestBase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        import sys
+        from io import StringIO
+
+        self.orig_stdout = sys.__stdout__
+        self.orig_stderr = sys.__stderr__
+        sys.__stdout__ = StringIO()
+        sys.__stderr__ = StringIO()
+
+    def tearDown(self):
+        super().tearDown()
+        import sys
+
+        sys.__stdout__ = self.orig_stdout
+        sys.__stderr__ = self.orig_stderr
 
 
 class TestVerbosity(unittest.TestCase):
@@ -151,8 +171,9 @@ class TestTestTimings(unittest.TestCase):
         self.assertEqual(timings.get_elapsed_time(), 10.0)
 
 
-class TestRobotTraceHelper(unittest.TestCase):
+class TestRobotTraceHelper(RobotTraceTestBase):
     def setUp(self):
+        super().setUp()
         self.listener = RobotTrace(verbosity="NORMAL", console_progress="NONE")
 
     def test_past_tense_upper_pass(self):
@@ -255,7 +276,7 @@ class TestTimingsFormatETA(unittest.TestCase):
         self.assertEqual(timings.format_eta(stats), "unknown")
 
 
-class TestRobotTraceInitialization(unittest.TestCase):
+class TestRobotTraceInitialization(RobotTraceTestBase):
     @patch("sys.stdout.isatty", return_value=True)
     def test_colors_auto_tty(self, mock_isatty):
         listener = RobotTrace(colors="AUTO", console_progress="NONE")
@@ -287,6 +308,35 @@ class TestRobotTraceInitialization(unittest.TestCase):
         import sys
 
         self.assertEqual(listener.progress_box.stream, sys.stderr)
+
+
+class TestInterceptStream(unittest.TestCase):
+    def test_write(self):
+        stream = InterceptStream(None, lambda x: None)
+        self.assertEqual(stream.write("hello"), 5)
+        self.assertEqual(stream.written_lines, ["hello"])
+
+    def test_writelines(self):
+        stream = InterceptStream(None, lambda x: None)
+        stream.writelines(["hello", "world"])
+        self.assertEqual(stream.written_lines, ["hello", "world"])
+
+    def test_flush(self):
+        received = []
+        stream = InterceptStream(None, lambda x: received.append(x))
+        stream.write("hello")
+        stream.write("world")
+        stream.flush()
+        self.assertEqual(received, ["hello", "world"])
+        self.assertEqual(stream.written_lines, [])
+
+    def test_getattr(self):
+        class DummyStream:
+            def dummy_method(self):
+                return "dummy"
+
+        stream = InterceptStream(DummyStream(), lambda x: None)
+        self.assertEqual(stream.dummy_method(), "dummy")
 
 
 class TestProgressBox(unittest.TestCase):
@@ -363,8 +413,9 @@ class TestProgressBox(unittest.TestCase):
         box_none.clear()
 
 
-class TestRobotTraceLifecycle(unittest.TestCase):
+class TestRobotTraceLifecycle(RobotTraceTestBase):
     def setUp(self):
+        super().setUp()
         from io import StringIO
 
         patcher = patch("sys.stdout", new_callable=StringIO)
@@ -374,6 +425,7 @@ class TestRobotTraceLifecycle(unittest.TestCase):
 
     def tearDown(self):
         patch.stopall()
+        super().tearDown()
 
     def test_suite_lifecycle(self):
         attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
@@ -422,8 +474,9 @@ class TestRobotTraceLifecycle(unittest.TestCase):
         self.assertEqual(len(self.listener.stats.failed_tests), 1)
 
 
-class TestRobotTraceKeywords(unittest.TestCase):
+class TestRobotTraceKeywords(RobotTraceTestBase):
     def setUp(self):
+        super().setUp()
         self.listener = RobotTrace(console_progress="NONE", verbosity="DEBUG")
 
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
@@ -460,8 +513,9 @@ class TestRobotTraceKeywords(unittest.TestCase):
         self.assertEqual(self.listener.test_trace_stack._depth, 0)
 
 
-class TestRobotTraceLogging(unittest.TestCase):
+class TestRobotTraceLogging(RobotTraceTestBase):
     def setUp(self):
+        super().setUp()
         self.listener = RobotTrace(
             console_progress="NONE", verbosity="DEBUG", colors="OFF"
         )
@@ -492,16 +546,31 @@ class TestRobotTraceLogging(unittest.TestCase):
 
         self.assertIn("I Info msg", self.listener.test_trace_stack.trace)
 
+    def test_log_message_to_console_stdout(self):
+        import sys
 
-class TestRobotTraceClose(unittest.TestCase):
+        self.listener.log_message_to_console("Some stdout text", "stdout")
+        self.assertIn(
+            "Logged from test stdout: Some stdout text", sys.__stdout__.getvalue()
+        )
+
+    def test_log_message_to_console_stderr(self):
+        import sys
+
+        self.listener.log_message_to_console("Some stderr text\n", "stderr")
+        self.assertIn(
+            "Logged from test stderr: Some stderr text", sys.__stdout__.getvalue()
+        )
+
+
+class TestRobotTraceClose(RobotTraceTestBase):
     def test_close_prints_summary(self):
-        from io import StringIO
+        import sys
 
         listener = RobotTrace(console_progress="NONE", verbosity="NORMAL")
         listener.stats.top_level_test_count = 1
         listener.stats.completed_tests = ["t1"]
 
-        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            listener.close()
-            output = mock_stdout.getvalue()
-            self.assertIn("RUN COMPLETE", output)
+        listener.close()
+        output = sys.__stdout__.getvalue()
+        self.assertIn("RUN COMPLETE", output)

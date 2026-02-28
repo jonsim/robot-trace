@@ -1,0 +1,5 @@
+Logged from test stdout: Message sent to the console stdout
+Logged from test stderr: Message sent to the console stderr
+Logged from test stdout: A different message sent to the console
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

@@ -30,6 +30,8 @@ import re
 import shutil
 import sys
 import time
+from collections.abc import Iterable
+from typing import Literal
 
 
 @functools.total_ordering
@@ -451,6 +453,30 @@ class ProgressBox:
         self.stream.flush()
 
 
+class InterceptStream:
+    def __init__(self, real_stream, write_callback):
+        self._real_stream = real_stream
+        self._write_callback = write_callback
+        self.written_lines = []
+
+    def write(self, msg: str) -> int:
+        self.written_lines.append(msg)
+        return len(msg)
+
+    def writelines(self, lines: Iterable[str]) -> None:
+        for line in lines:
+            self.write(line)
+
+    def flush(self):
+        for line in self.written_lines:
+            self._write_callback(line)
+        self.written_lines.clear()
+
+    # Forward everything else.
+    def __getattr__(self, name):
+        return getattr(self._real_stream, name)
+
+
 class RobotTrace:
     ROBOT_LISTENER_API_VERSION = 2
 
@@ -519,6 +545,24 @@ class RobotTrace:
 
             colorama.just_fix_windows_console()
 
+        # Reconfigure the logging. Robot doesn't really support this very nicely
+        # - it forces everything to sys.__stdout__ and sys.__stderr__ (not even
+        # sys.stdout/sys.stderr), rather than going via a logger or other
+        # configurable mechanism. There's no command line options to change
+        # this.
+        # Thus, install an interceptor to catch all output on both streams. The
+        # intercepted output can then be integrated into the formatted output.
+        self.real_stdout = sys.__stdout__
+        self.real_stderr = sys.__stderr__
+        self.intercepted_stdout = InterceptStream(
+            self.real_stdout, lambda msg: self.log_message_to_console(msg, "stdout")
+        )
+        self.intercepted_stderr = InterceptStream(
+            self.real_stderr, lambda msg: self.log_message_to_console(msg, "stderr")
+        )
+        sys.__stdout__ = self.intercepted_stdout
+        sys.__stderr__ = self.intercepted_stderr
+
         # Finally, prepare the console interface.
         self.progress_box.draw()
 
@@ -529,8 +573,8 @@ class RobotTrace:
         return self.timings.current_test_start_time is not None
 
     def _writeln(self, text=""):
-        sys.stdout.write(text + "\n")
-        sys.stdout.flush()
+        self.real_stdout.write(text + "\n")
+        self.real_stdout.flush()
 
     def _past_tense(self, verb: str) -> str:
         is_upper = verb.isupper()
@@ -766,6 +810,9 @@ class RobotTrace:
             stack.has_failures = True
 
         stack.append_trace("\n".join(lines))
+
+    def log_message_to_console(self, message: str, stream: Literal["stdout", "stderr"]):
+        self._print_trace(f"Logged from test {stream}: {message.rstrip()}")
 
     # ------------------------------------------------------------------ close
 
