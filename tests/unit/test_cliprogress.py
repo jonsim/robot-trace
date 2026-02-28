@@ -345,7 +345,7 @@ class TestProgressBox(unittest.TestCase):
         from io import StringIO
 
         self.stream = StringIO()
-        self.box = ProgressBox(stream=self.stream, width=80)
+        self.box = ProgressBox(stream=self.stream, colors=True, width=80)
 
     def test_draw(self):
         self.box.draw()
@@ -360,11 +360,28 @@ class TestProgressBox(unittest.TestCase):
         self.stream.seek(0)
         self.box.draw()
         output = self.stream.getvalue()
-        expected_bar = "┌──────┤" + "█" * 32 + "░" * 32 + "├──────┐"
+        expected_bar = "┌──────┤" + ANSI.Fore.GREEN("█") * 32 + "░" * 32 + "├──────┐"
+        self.assertIn(expected_bar, output)
+
+    def test_draw_with_progress_bar_many_statuses(self):
+        self.box.total_tasks = 200
+        self.box._task_statuses = ["PASS"] * 50 + ["FAIL"] * 30 + ["SKIP"] * 20
+        self.stream.truncate(0)
+        self.stream.seek(0)
+        self.box.draw()
+        output = self.stream.getvalue()
+        expected_bar = (
+            "┌──────┤"
+            + ANSI.Fore.GREEN("█") * 16
+            + ANSI.Fore.RED("█") * 10
+            + ANSI.Fore.YELLOW("█") * 6
+            + "░" * 32
+            + "├──────┐"
+        )
         self.assertIn(expected_bar, output)
 
     def test_progress_bar_narrow_terminal(self):
-        box_narrow = ProgressBox(stream=self.stream, width=39)
+        box_narrow = ProgressBox(stream=self.stream, colors=False, width=39)
         self.stream.truncate(0)
         self.stream.seek(0)
         box_narrow.total_tasks = 10

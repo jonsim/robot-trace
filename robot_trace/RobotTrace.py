@@ -602,8 +602,9 @@ class TestTimings:
 
 
 class ProgressBox:
-    def __init__(self, stream, width: int = 120):
+    def __init__(self, stream, colors: bool, width: int = 120):
         self.stream = stream
+        self.colors = colors
         self.width = width
         self._lines = ["", "", ""]
         self._display_progress_bar = width >= 40
@@ -614,22 +615,43 @@ class ProgressBox:
         if not self.stream:
             return
 
-        if self._total_tasks is not None and self._display_progress_bar:
+        total_tasks = self._total_tasks
+        if total_tasks is not None and self._display_progress_bar:
             # If we know the total number of tasks we will execute, draw the
             # progress bar at the top of the box.
             bar_length = self.width - 16
-            completion = len(self._task_statuses) / self._total_tasks
+            completion = len(self._task_statuses) / total_tasks
             bar_completed = int(completion * bar_length)
             bar_remaining = bar_length - bar_completed
+
+            progress_bar = ""
+            for i in range(bar_completed):
+                start_idx = int(i * total_tasks / bar_length)
+                end_idx = int((i + 1) * total_tasks / bar_length)
+                if end_idx == start_idx:
+                    end_idx = start_idx + 1
+
+                chunk_statuses = self._task_statuses[start_idx:end_idx]
+                if "FAIL" in chunk_statuses:
+                    status = "FAIL"
+                elif "SKIP" in chunk_statuses:
+                    status = "SKIP"
+                else:
+                    status = "PASS"
+
+                if self.colors:
+                    if status == "FAIL":
+                        progress_bar += ANSI.Fore.RED("█")
+                    elif status == "SKIP":
+                        progress_bar += ANSI.Fore.YELLOW("█")
+                    elif status == "PASS":
+                        progress_bar += ANSI.Fore.GREEN("█")
+                else:
+                    progress_bar += "█"
+            progress_bar += "░" * bar_remaining
+
             self.stream.write(
-                "┌"
-                + "─" * 6
-                + "┤"
-                + "█" * bar_completed
-                + "░" * bar_remaining
-                + "├"
-                + "─" * 6
-                + "┐\n"
+                "┌" + "─" * 6 + "┤" + progress_bar + "├" + "─" * 6 + "┐\n"
             )
         else:
             # Otherwise just draw a solid top border.
@@ -812,7 +834,9 @@ class RobotTrace:
         self.terminal_width = min(
             shutil.get_terminal_size(fallback=(width, 40)).columns, width
         )
-        self.progress_box = ProgressBox(progress_stream, self.terminal_width)
+        self.progress_box = ProgressBox(
+            progress_stream, self.colors, self.terminal_width
+        )
         self.stats = TestStatistics()
         self.timings = TestTimings()
         if self.live_output:
