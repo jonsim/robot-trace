@@ -27,6 +27,6 @@ RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised
 
 Warning test:
 - Suite Teardown Warning:
-  - W Suite teardown completed
+  - Suite teardown completed
 
 Total elapsed:  0s.

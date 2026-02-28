@@ -11,6 +11,6 @@ RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised
 
 Erroring test:
 - Log Error.Log Error:
-  - E This testcase errored
+  - This testcase errored
 
 Total elapsed:  0s.

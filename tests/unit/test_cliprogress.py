@@ -12,6 +12,7 @@ from robot_trace.RobotTrace import (
     TraceStack,
     Verbosity,
     _ANSICode,
+    _past_tense,
 )
 
 
@@ -177,22 +178,22 @@ class TestRobotTraceHelper(RobotTraceTestBase):
         self.listener = RobotTrace(verbosity="NORMAL", console_progress="NONE")
 
     def test_past_tense_upper_pass(self):
-        self.assertEqual(self.listener._past_tense("PASS"), "PASSED")
+        self.assertEqual(_past_tense("PASS"), "PASSED")
 
     def test_past_tense_upper_fail(self):
-        self.assertEqual(self.listener._past_tense("FAIL"), "FAILED")
+        self.assertEqual(_past_tense("FAIL"), "FAILED")
 
     def test_past_tense_upper_skip(self):
-        self.assertEqual(self.listener._past_tense("SKIP"), "SKIPPED")
+        self.assertEqual(_past_tense("SKIP"), "SKIPPED")
 
     def test_past_tense_lower(self):
-        self.assertEqual(self.listener._past_tense("pass"), "passed")
+        self.assertEqual(_past_tense("pass"), "passed")
 
     def test_past_tense_title_try(self):
-        self.assertEqual(self.listener._past_tense("Try"), "Tried")
+        self.assertEqual(_past_tense("Try"), "Tried")
 
     def test_past_tense_title_stop(self):
-        self.assertEqual(self.listener._past_tense("Stop"), "Stopped")
+        self.assertEqual(_past_tense("Stop"), "Stopped")
 
     def test_verbosity_settings_debug(self):
         listener = RobotTrace(verbosity="DEBUG", console_progress="NONE")
@@ -435,7 +436,7 @@ class TestRobotTraceLifecycle(RobotTraceTestBase):
 
         end_attributes = {"status": "PASS", "longname": "My_Suite", "message": ""}
         self.listener.end_suite("My_Suite", end_attributes)
-        self.assertEqual(self.listener.suite_trace_stack._depth, 0)
+        self.assertEqual(self.listener.result_printer.suite_trace_stack._depth, 0)
 
     def test_test_lifecycle(self):
         suite_attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
@@ -494,11 +495,11 @@ class TestRobotTraceKeywords(RobotTraceTestBase):
         }
 
         self.listener.start_keyword("BuiltIn.My Keyword", attributes)
-        self.assertEqual(self.listener.test_trace_stack._depth, 1)
+        self.assertEqual(self.listener.result_printer.test_trace_stack._depth, 1)
 
         self.listener.end_keyword("BuiltIn.My Keyword", attributes)
-        self.assertEqual(self.listener.test_trace_stack._depth, 0)
-        self.assertIn("2s", self.listener.test_trace_stack.trace)
+        self.assertEqual(self.listener.result_printer.test_trace_stack._depth, 0)
+        self.assertIn("2s", self.listener.result_printer.test_trace_stack.trace)
 
     def test_keyword_lifecycle_not_run(self):
         attributes = {
@@ -510,7 +511,7 @@ class TestRobotTraceKeywords(RobotTraceTestBase):
 
         self.listener.start_keyword("MyLib.My Keyword", attributes)
         self.listener.end_keyword("MyLib.My Keyword", attributes)
-        self.assertEqual(self.listener.test_trace_stack._depth, 0)
+        self.assertEqual(self.listener.result_printer.test_trace_stack._depth, 0)
 
 
 class TestRobotTraceLogging(RobotTraceTestBase):
@@ -528,23 +529,25 @@ class TestRobotTraceLogging(RobotTraceTestBase):
         self.listener.log_message(attributes)
 
         self.assertEqual(len(self.listener.stats.warnings), 1)
-        self.assertTrue(self.listener.test_trace_stack.has_warnings)
-        self.assertIn("W A warning", self.listener.test_trace_stack.trace)
-        self.assertIn("Line 2", self.listener.test_trace_stack.trace)
+        self.assertTrue(self.listener.result_printer.test_trace_stack.has_warnings)
+        self.assertIn(
+            "W A warning", self.listener.result_printer.test_trace_stack.trace
+        )
+        self.assertIn("Line 2", self.listener.result_printer.test_trace_stack.trace)
 
     def test_log_message_error(self):
         attributes = {"level": "ERROR", "message": "An error"}
         self.listener.log_message(attributes)
 
         self.assertEqual(len(self.listener.stats.errors), 1)
-        self.assertTrue(self.listener.test_trace_stack.has_errors)
-        self.assertIn("E An error", self.listener.test_trace_stack.trace)
+        self.assertTrue(self.listener.result_printer.test_trace_stack.has_errors)
+        self.assertIn("E An error", self.listener.result_printer.test_trace_stack.trace)
 
     def test_log_message_info(self):
         attributes = {"level": "INFO", "message": "Info msg"}
         self.listener.log_message(attributes)
 
-        self.assertIn("I Info msg", self.listener.test_trace_stack.trace)
+        self.assertIn("I Info msg", self.listener.result_printer.test_trace_stack.trace)
 
     def test_log_message_to_console_stdout(self):
         import sys

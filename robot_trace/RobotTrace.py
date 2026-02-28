@@ -198,9 +198,205 @@ class TraceStack:
         self._stack.clear()
 
 
+class BufferedTracePrinter:
+    def __init__(
+        self,
+        print_passed: bool,
+        print_skipped: bool,
+        print_warned: bool,
+        print_errored: bool,
+        print_failed: bool,
+        colors: bool,
+        width: int,
+        print_callback,
+    ):
+        self.print_passed = print_passed
+        self.print_skipped = print_skipped
+        self.print_warned = print_warned
+        self.print_errored = print_errored
+        self.print_failed = print_failed
+        self.colors = colors
+        self.width = width
+        self.print = print_callback
+        self.test_trace_stack = TraceStack("<prerun>")
+        self.suite_trace_stack = TraceStack("<prerun>")
+
+    def start_suite(self, name, attributes):
+        suite_name = attributes["longname"]
+        self.suite_trace_stack.reset(suite_name)
+
+    def end_suite(self, name, attributes):
+        trace = self.suite_trace_stack.trace
+
+        status = attributes["status"]
+        status_text = ""
+        if trace:
+            should_print = self.print_passed
+            status_text = "SUITE " + _past_tense(status)
+            status_color = None
+            if self.suite_trace_stack.has_failures:
+                should_print |= self.print_failed
+                status_color = ANSI.Fore.RED
+            if self.suite_trace_stack.has_errors:
+                should_print |= self.print_errored
+                status_text += " WITH ERRORS"
+                status_color = ANSI.Fore.RED
+            if self.suite_trace_stack.has_warnings:
+                should_print |= self.print_warned
+                status_text += " WITH WARNINGS"
+                status_color = ANSI.Fore.BRIGHT_YELLOW
+            if should_print:
+                if self.colors and status_color:
+                    status_text = status_color(status_text)
+                suite_name = attributes["longname"]
+                status_line = f"{status_text}: {suite_name}"
+                underline_length = min(self.width, ANSI.len(status_line))
+                underline = "═" * underline_length
+                if not trace:
+                    trace = attributes["message"] + "\n"
+                trace = f"{status_line}\n{underline}\n{trace}"
+                self.print(trace)
+
+    def start_test(self, name, attributes):
+        test_name = attributes["longname"]
+        self.test_trace_stack.reset(test_name)
+
+    def end_test(self, name, attributes):
+        trace = self.test_trace_stack.trace
+        status = attributes["status"]
+        if status != "NOT RUN":
+            should_print = False
+            status_text = "TEST " + _past_tense(status)
+            status_color = None
+            if status == "PASS":
+                should_print = self.print_passed
+                status_color = ANSI.Fore.GREEN
+            elif status == "SKIP":
+                should_print = self.print_skipped
+                status_color = ANSI.Fore.YELLOW
+            elif status == "FAIL":
+                should_print = self.print_failed
+                status_color = ANSI.Fore.RED
+            if self.test_trace_stack.has_errors:
+                should_print |= self.print_errored
+                status_text += " WITH ERRORS"
+                status_color = ANSI.Fore.RED
+            if self.test_trace_stack.has_warnings:
+                should_print |= self.print_warned
+                status_text += " WITH WARNINGS"
+                status_color = ANSI.Fore.BRIGHT_YELLOW
+            if should_print:
+                if self.colors and status_color:
+                    status_text = status_color(status_text)
+                test_name = attributes["longname"]
+                status_line = f"{status_text}: {test_name}"
+                underline_length = min(self.width, ANSI.len(status_line))
+                underline = "═" * underline_length
+                if not trace:
+                    trace = attributes["message"] + "\n"
+                trace = f"{status_line}\n{underline}\n{trace}"
+                self.print(trace)
+
+    def start_keyword(self, in_test: bool, name, attributes):
+        stack = self.test_trace_stack if in_test else self.suite_trace_stack
+        kwtype = attributes["type"]
+        args = attributes["args"]
+        if kwtype != "KEYWORD":
+            name = f"{kwtype}    {name}" if name else kwtype
+        if args or kwtype in {"KEYWORD", "SETUP", "TEARDOWN"}:
+            argstr = "(" + ", ".join(repr(a) for a in args) + ")"
+        else:
+            argstr = ""
+        trace_line = f"▶ {name}{argstr}"
+        stack.push_keyword(trace_line)
+
+    def end_keyword(self, in_test: bool, name, attributes):
+        stack = self.test_trace_stack if in_test else self.suite_trace_stack
+        status = attributes["status"]
+        if status == "NOT RUN":
+            # Discard; the header was never flushed so it just disappears.
+            stack.pop_keyword()
+            return
+
+        # Keyword ran - flush any pending ancestor headers (and this one)
+        # so the hierarchy appears in the trace.
+        stack.flush()
+
+        elapsed_time_ms = attributes["elapsedtime"]
+        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
+
+        keyword_trace = "  "
+        if status == "PASS":
+            status_text = "✓ PASS"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "SKIP":
+            status_text = "→ SKIP"
+            if self.colors:
+                status_text = ANSI.Fore.YELLOW(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        elif status == "FAIL":
+            status_text = "✗ FAIL"
+            if self.colors:
+                status_text = ANSI.Fore.BRIGHT_RED(status_text)
+            keyword_trace += f"{status_text}    {elapsed}"
+        else:
+            keyword_trace += f"? {status}    {elapsed}"
+
+        stack.append_trace(keyword_trace)
+
+    def log_message(self, in_test: bool, attributes):
+        level = attributes["level"]
+        text = attributes["message"]
+
+        # Flush keyword headers so they appear above the log line.
+        stack = self.test_trace_stack if in_test else self.suite_trace_stack
+        stack.flush(decrement_depth=False)
+
+        level_initial = level[0].upper()
+        text_lines = text.splitlines()
+        lines = []
+        # First line gets level initial
+        lines.append(f"{level_initial} {text_lines[0]}")
+        # Remaining lines align without repeating the level
+        for text_line in text_lines[1:]:
+            lines.append(f"  {text_line}")
+
+        if self.colors:
+            if level == "ERROR":
+                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
+            elif level == "FAIL":
+                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
+            elif level == "WARN":
+                lines = [ANSI.Fore.BRIGHT_YELLOW(line) for line in lines]
+            elif level == "SKIP":
+                lines = [ANSI.Fore.YELLOW(line) for line in lines]
+            elif level == "INFO":
+                lines = [ANSI.Fore.BRIGHT_BLACK(line) for line in lines]
+            elif level == "DEBUG" or level == "TRACE":
+                lines = [ANSI.Fore.WHITE(line) for line in lines]
+
+        if level == "ERROR":
+            stack.has_errors = True
+        elif level == "WARN":
+            stack.has_warnings = True
+        elif level == "FAIL":
+            stack.has_failures = True
+
+        stack.append_trace("\n".join(lines))
+
+    def log_message_to_console(
+        self, in_test: bool, message: str, stream: Literal["stdout", "stderr"]
+    ):
+        self.print(f"Logged from test {stream}: {message.rstrip()}")
+
+
 class TestStatistics:
     def __init__(self):
         self.top_level_test_count: int | None = None
+        self.current_suite: str | None = None
+        self.current_test: str | None = None
         self.started_suites = []
         self.started_tests = []
         self.passed_tests = []
@@ -213,21 +409,25 @@ class TestStatistics:
 
     def start_suite(self, name, attributes):
         suite_name = attributes["longname"]
+        self.current_suite = suite_name
         self.started_suites.append(suite_name)
         if self.top_level_test_count is None:
             self.top_level_test_count = attributes["totaltests"]
 
     def end_suite(self, name, attributes):
         suite_name = attributes["longname"]
+        self.current_suite = None
         self.completed_suites.append(suite_name)
 
     def start_test(self, name, attributes):
         test_name = attributes["longname"]
+        self.current_test = test_name
         self.started_tests.append(test_name)
 
     def end_test(self, name, attributes):
         status = attributes["status"]
         test_name = attributes["longname"]
+        self.current_test = None
         if status == "NOT RUN":
             return
         self.completed_tests.append(test_name)
@@ -238,11 +438,15 @@ class TestStatistics:
         elif status == "SKIP":
             self.skipped_tests.append(test_name)
 
-    def log_error(self, name: str, text: str):
-        self.errors.setdefault(name, []).append(text)
+    def log_error(self, text: str):
+        self.errors.setdefault(
+            self.current_test if self.current_test else self.current_suite, []
+        ).append(text)
 
-    def log_warning(self, name: str, text: str):
-        self.warnings.setdefault(name, []).append(text)
+    def log_warning(self, text: str):
+        self.warnings.setdefault(
+            self.current_test if self.current_test else self.current_suite, []
+        ).append(text)
 
     def format_suite_progress(self) -> str:
         return f"{len(self.started_suites):2d}"
@@ -536,8 +740,16 @@ class RobotTrace:
         self.progress_box = ProgressBox(progress_stream, self.terminal_width)
         self.stats = TestStatistics()
         self.timings = TestTimings()
-        self.test_trace_stack = TraceStack("<prerun>")
-        self.suite_trace_stack = TraceStack("<prerun>")
+        self.result_printer = BufferedTracePrinter(
+            print_passed=self.print_passed,
+            print_skipped=self.print_skipped,
+            print_warned=self.print_warned,
+            print_errored=self.print_errored,
+            print_failed=self.print_failed,
+            colors=self.colors,
+            width=self.terminal_width,
+            print_callback=self._print_trace,
+        )
 
         # On Windows, import colorama if we're coloring output.
         if self.colors and sys.platform == "win32":
@@ -576,24 +788,6 @@ class RobotTrace:
         self.real_stdout.write(text + "\n")
         self.real_stdout.flush()
 
-    def _past_tense(self, verb: str) -> str:
-        is_upper = verb.isupper()
-        is_title = verb.istitle()
-        v = verb.lower()
-        if v.endswith("e"):
-            res = v + "d"
-        elif v.endswith("y"):
-            res = v[:-1] + "ied"
-        elif v.endswith("p"):
-            res = v + "ped"
-        else:
-            res = v + "ed"
-        if is_upper:
-            return res.upper()
-        elif is_title:
-            return res.title()
-        return res
-
     def _print_trace(self, text: str):
         # First clear the progress box, so we don't have to worry about
         # interleaving with the trace output.
@@ -611,56 +805,24 @@ class RobotTrace:
         if self.stats.top_level_test_count is not None:
             self.progress_box.total_tasks = self.stats.top_level_test_count
         self.timings.start_suite()
-        self.suite_trace_stack.reset(suite_name)
+        self.result_printer.start_suite(name, attributes)
 
         self.progress_box.write_line(
             0, f"[SUITE {self.stats.format_suite_progress()}] {suite_name}"
         )
 
     def end_suite(self, name, attributes):
-        trace = self.suite_trace_stack.trace
         self.stats.end_suite(name, attributes)
+        self.result_printer.end_suite(name, attributes)
 
         self.progress_box.write_line(0)
-
-        status = attributes["status"]
-        status_text = ""
-        if trace:
-            should_print = self.print_passed
-            status_text = "SUITE " + self._past_tense(status)
-            status_color = None
-            if self.suite_trace_stack.has_failures:
-                should_print |= self.print_failed
-                status_color = ANSI.Fore.RED
-            if self.suite_trace_stack.has_errors:
-                should_print |= self.print_errored
-                status_text += " WITH ERRORS"
-                status_color = ANSI.Fore.RED
-            if self.suite_trace_stack.has_warnings:
-                should_print |= self.print_warned
-                status_text += " WITH WARNINGS"
-                status_color = ANSI.Fore.BRIGHT_YELLOW
-            if should_print:
-                if self.colors and status_color:
-                    status_text = status_color(status_text)
-                suite_name = attributes["longname"]
-                status_line = f"{status_text}: {suite_name}"
-                underline_length = min(self.terminal_width, ANSI.len(status_line))
-                underline = "═" * underline_length
-                if not trace:
-                    trace = attributes["message"] + "\n"
-                trace = f"{status_line}\n{underline}\n{trace}"
-                self._print_trace(trace)
-
-        # self.suite_trace_stack.reset("<prerun>")
 
     # ------------------------------------------------------------------ test
 
     def start_test(self, name, attributes):
-        test_name = attributes["longname"]
         self.stats.start_test(name, attributes)
         self.timings.start_test()
-        self.test_trace_stack.reset(test_name)
+        self.result_printer.start_test(name, attributes)
 
         self.progress_box.write_line(
             1,
@@ -670,50 +832,17 @@ class RobotTrace:
         )
 
     def end_test(self, name, attributes):
-        trace = self.test_trace_stack.trace
         self.stats.end_test(name, attributes)
         self.timings.end_test()
         self.progress_box.completed_tasks += 1
         self.progress_box.write_line(1)
-        status = attributes["status"]
-        if status != "NOT RUN":
-            should_print = False
-            status_text = "TEST " + self._past_tense(status)
-            status_color = None
-            if status == "PASS":
-                should_print = self.print_passed
-                status_color = ANSI.Fore.GREEN
-            elif status == "SKIP":
-                should_print = self.print_skipped
-                status_color = ANSI.Fore.YELLOW
-            elif status == "FAIL":
-                should_print = self.print_failed
-                status_color = ANSI.Fore.RED
-            if self.test_trace_stack.has_errors:
-                should_print |= self.print_errored
-                status_text += " WITH ERRORS"
-                status_color = ANSI.Fore.RED
-            if self.test_trace_stack.has_warnings:
-                should_print |= self.print_warned
-                status_text += " WITH WARNINGS"
-                status_color = ANSI.Fore.BRIGHT_YELLOW
-            if should_print:
-                if self.colors and status_color:
-                    status_text = status_color(status_text)
-                test_name = attributes["longname"]
-                status_line = f"{status_text}: {test_name}"
-                underline_length = min(self.terminal_width, ANSI.len(status_line))
-                underline = "═" * underline_length
-                if not trace:
-                    trace = attributes["message"] + "\n"
-                trace = f"{status_line}\n{underline}\n{trace}"
-                self._print_trace(trace)
-        # self.test_trace_stack.reset("<prerun>")
+        self.result_printer.end_test(name, attributes)
 
     # ------------------------------------------------------------------ keyword
 
     def start_keyword(self, name, attributes):
-        stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
+        self.result_printer.start_keyword(self.in_test, name, attributes)
+
         kwtype = attributes["type"]
         kwname = attributes["kwname"]
         args = attributes["args"]
@@ -723,96 +852,27 @@ class RobotTrace:
             argstr = "(" + ", ".join(repr(a) for a in args) + ")"
         else:
             argstr = ""
-        trace_line = f"▶ {name}{argstr}"
-        stack.push_keyword(trace_line)
-
         self.progress_box.write_line(2, f"[{kwname}]  {argstr}")
 
     def end_keyword(self, name, attributes):
-        stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
-        status = attributes["status"]
-        if status == "NOT RUN":
-            # Discard; the header was never flushed so it just disappears.
-            stack.pop_keyword()
-            self.progress_box.write_line(2)
-            return
-
-        # Keyword ran - flush any pending ancestor headers (and this one)
-        # so the hierarchy appears in the trace.
-        stack.flush()
-
-        elapsed_time_ms = attributes["elapsedtime"]
-        elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
-
-        keyword_trace = "  "
-        if status == "PASS":
-            status_text = "✓ PASS"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_GREEN(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "SKIP":
-            status_text = "→ SKIP"
-            if self.colors:
-                status_text = ANSI.Fore.YELLOW(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        elif status == "FAIL":
-            status_text = "✗ FAIL"
-            if self.colors:
-                status_text = ANSI.Fore.BRIGHT_RED(status_text)
-            keyword_trace += f"{status_text}    {elapsed}"
-        else:
-            keyword_trace += f"? {status}    {elapsed}"
-
-        stack.append_trace(keyword_trace)
+        self.result_printer.end_keyword(self.in_test, name, attributes)
 
         self.progress_box.write_line(2)
 
     # ------------------------------------------------------------------ logging
 
     def log_message(self, attributes):
+        self.result_printer.log_message(self.in_test, attributes)
         level = attributes["level"]
         text = attributes["message"]
 
-        # Flush keyword headers so they appear above the log line.
-        stack = self.test_trace_stack if self.in_test else self.suite_trace_stack
-        stack.flush(decrement_depth=False)
-
-        level_initial = level[0].upper()
-        text_lines = text.splitlines()
-        lines = []
-        # First line gets level initial
-        lines.append(f"{level_initial} {text_lines[0]}")
-        # Remaining lines align without repeating the level
-        for text_line in text_lines[1:]:
-            lines.append(f"  {text_line}")
-
-        if self.colors:
-            if level == "ERROR":
-                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
-            elif level == "FAIL":
-                lines = [ANSI.Fore.BRIGHT_RED(line) for line in lines]
-            elif level == "WARN":
-                lines = [ANSI.Fore.BRIGHT_YELLOW(line) for line in lines]
-            elif level == "SKIP":
-                lines = [ANSI.Fore.YELLOW(line) for line in lines]
-            elif level == "INFO":
-                lines = [ANSI.Fore.BRIGHT_BLACK(line) for line in lines]
-            elif level == "DEBUG" or level == "TRACE":
-                lines = [ANSI.Fore.WHITE(line) for line in lines]
-
         if level == "ERROR":
-            self.stats.log_error(stack.name, "\n".join(lines))
-            stack.has_errors = True
+            self.stats.log_error(text)
         elif level == "WARN":
-            self.stats.log_warning(stack.name, "\n".join(lines))
-            stack.has_warnings = True
-        elif level == "FAIL":
-            stack.has_failures = True
-
-        stack.append_trace("\n".join(lines))
+            self.stats.log_warning(text)
 
     def log_message_to_console(self, message: str, stream: Literal["stdout", "stderr"]):
-        self._print_trace(f"Logged from test {stream}: {message.rstrip()}")
+        self.result_printer.log_message_to_console(self.in_test, message, stream)
 
     # ------------------------------------------------------------------ close
 
@@ -832,3 +892,22 @@ class RobotTrace:
         ):
             elapsed_str = self.timings.format_elapsed_time()
             self._writeln(f"Total elapsed: {elapsed_str}.")
+
+
+def _past_tense(verb: str) -> str:
+    is_upper = verb.isupper()
+    is_title = verb.istitle()
+    v = verb.lower()
+    if v.endswith("e"):
+        res = v + "d"
+    elif v.endswith("y"):
+        res = v[:-1] + "ied"
+    elif v.endswith("p"):
+        res = v + "ped"
+    else:
+        res = v + "ed"
+    if is_upper:
+        return res.upper()
+    elif is_title:
+        return res.title()
+    return res

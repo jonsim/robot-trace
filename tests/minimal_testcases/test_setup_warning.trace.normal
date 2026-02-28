@@ -24,6 +24,6 @@ RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised
 
 Warning test:
 - Test Setup Warning.Test Case 1:
-  - W Test setup completed
+  - Test setup completed
 
 Total elapsed:  0s.
