@@ -60,6 +60,7 @@ def main():
     console_colors = None
     console_width = None
     console_progress = None
+    trace_subprocesses = False
     verbosity = None
 
     arg_iter = iter(args)
@@ -99,13 +100,20 @@ def main():
             console_width = value
         elif name == "--consoleprogress":
             console_progress = value
+        elif name == "--tracesubprocesses":
+            trace_subprocesses = True
         elif name == "--verbose":
             verbosity = "DEBUG"
         elif name == "--quiet":
             verbosity = "QUIET"
 
         # Reconstruct robot_args, omitting our custom arguments.
-        if name not in {"--consoleprogress", "--verbose", "--quiet"}:
+        if name not in {
+            "--consoleprogress",
+            "--verbose",
+            "--quiet",
+            "--tracesubprocesses",
+        }:
             robot_args.append(arg)
             if consumed_next and value is not None:
                 robot_args.append(value)
@@ -118,6 +126,8 @@ def main():
         listener += f":width={console_width}"
     if console_progress is not None:
         listener += f":console_progress={console_progress}"
+    if trace_subprocesses:
+        listener += ":trace_subprocesses=True"
     if verbosity is not None:
         listener += f":verbosity={verbosity}"
     cmd = [

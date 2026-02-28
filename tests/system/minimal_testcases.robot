@@ -30,11 +30,11 @@ if_else_failing (verbose)                       if_else_failing                 
 if_else_passing                                 if_else_passing
 if_else_passing (verbose)                       if_else_passing                     mode=verbose
 invalid_syntax                                  invalid_syntax                      expected_rc=1
-invalid_syntax (verbose)                        invalid_syntax                      expected_rc=1       mode=verbose
+invalid_syntax (verbose)                        invalid_syntax                      expected_rc=1           mode=verbose
 log_console                                     log_console
 log_console (verbose)                           log_console                         mode=verbose
 log_debug                                       log_debug                           -LDEBUG
-log_debug (verbose)                             log_debug                           -LDEBUG             mode=verbose
+log_debug (verbose)                             log_debug                           -LDEBUG                 mode=verbose
 log_error                                       log_error
 log_error (verbose)                             log_error                           mode=verbose
 log_multiline                                   log_multiline
@@ -57,6 +57,8 @@ run_keywords_failing                            run_keywords_failing
 run_keywords_failing (verbose)                  run_keywords_failing                mode=verbose
 run_keywords_passing                            run_keywords_passing
 run_keywords_passing (verbose)                  run_keywords_passing                mode=verbose
+run_process                                     run_process                         --tracesubprocesses
+run_process (verbose)                           run_process                         --tracesubprocesses     mode=verbose
 suite_setup_failing                             suite_setup_failing
 suite_setup_failing (verbose)                   suite_setup_failing                 mode=verbose
 suite_setup_failing_testcase                    suite_setup_failing_testcase

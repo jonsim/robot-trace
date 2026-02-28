@@ -28,6 +28,7 @@ import enum
 import functools
 import re
 import shutil
+import subprocess
 import sys
 import time
 from collections.abc import Iterable
@@ -735,6 +736,32 @@ class InterceptStream:
         return getattr(self._real_stream, name)
 
 
+class PopenWrapper:
+    def __init__(self, real_popen, stdout_callback, stderr_callback):
+        self._real_popen = real_popen
+        self._stdout_callback = stdout_callback
+        self._stderr_callback = stderr_callback
+
+    def __call__(self, *args, **kwargs):
+        ret = self._real_popen(*args, **kwargs)
+
+        real_communicate = ret.communicate
+
+        def wrapped_communicate(*args, **kwargs):
+            stdout, stderr = real_communicate(*args, **kwargs)
+            if stdout:
+                self._stdout_callback(stdout.decode("utf-8"))
+            if stderr:
+                self._stderr_callback(stderr.decode("utf-8"))
+            return stdout, stderr
+
+        ret.communicate = wrapped_communicate
+        return ret
+
+    def __getattr__(self, name):
+        return getattr(self._real_popen, name)
+
+
 class RobotTrace:
     ROBOT_LISTENER_API_VERSION = 2
 
@@ -743,6 +770,7 @@ class RobotTrace:
         verbosity: str = "NORMAL",
         colors: str = "AUTO",
         console_progress: str = "AUTO",
+        trace_subprocesses: bool = False,
         width: int = 120,
     ):
         # Parse verbosity argument.
@@ -823,6 +851,17 @@ class RobotTrace:
             import colorama
 
             colorama.just_fix_windows_console()
+
+        if trace_subprocesses:
+            subprocess.Popen = PopenWrapper(
+                subprocess.Popen,
+                lambda msg: self.log_message(
+                    {"level": "TRACE", "message": "Process stdout:\n" + msg.rstrip()}
+                ),
+                lambda msg: self.log_message(
+                    {"level": "TRACE", "message": "Process stderr:\n" + msg.rstrip()}
+                ),
+            )
 
         # Reconfigure the logging. Robot doesn't really support this very nicely
         # - it forces everything to sys.__stdout__ and sys.__stderr__ (not even

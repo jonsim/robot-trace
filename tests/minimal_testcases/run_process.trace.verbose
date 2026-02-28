@@ -1,0 +1,15 @@
+SUITE: Run Process
+══════════════════
+TEST: Run Process.Run A Subprocess
+══════════════════════════════════
+▶ Process.Run Process('python', '-c', "print('Hello World')")
+  I Starting process:
+    python -c "print('Hello World')"
+  I Waiting for process to complete.
+  T Process stdout:
+    Hello World
+  I Process completed.
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

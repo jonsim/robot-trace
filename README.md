@@ -39,8 +39,9 @@ Robot's standard `--consolewidth` and `--consolecolors` arguments control the
 listener's output; their behavior matches Robot's documentation.
 
 `robot-trace` also introduces its own custom arguments that are consumed (matching
-Robot's argument parsing conventions regarding case insensitivity and
-hyphenation) before passing the command line to Robot:
+[Robot's argument parsing conventions](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#command-line-options)
+regarding case insensitivity and hyphenation) before passing the command line to
+Robot:
 - `--verbose`: Sets the listener verbosity to `DEBUG` verbosity. Traces from all
   tests are printed.
 - `--quiet`: Sets the listener verbosity to `QUIET` verbosity. Only traces from
@@ -50,6 +51,9 @@ hyphenation) before passing the command line to Robot:
   Valid values are `AUTO`, `STDOUT`, `STDERR`, `NONE` (to suppress it). Defaults
   to `AUTO`, which will print to `stdout` or `stderr` if they haven't been
   redirected, or suppress it otherwise.
+- `--tracesubprocesses`: Traces all lines printed by subprocesses (e.g. via the
+  _Run Process_ keyword) as 'TRACE' level messages. Note that this only emits
+  them to the console log, not any of the output files.
 
 
 ### 2. As a module-based Robot listener
@@ -81,6 +85,10 @@ The listener supports the following arguments:
   values are `AUTO`, `STDOUT`, `STDERR`, `NONE` (to suppress it). Defaults to
   `AUTO`, which will print to `stdout` or `stderr` if they haven't been
   redirected, or suppress it otherwise.
+- `trace_subprocesses=<value>`: Traces all lines printed by subprocesses (e.g.
+  via the _Run Process_ keyword) as 'TRACE' level messages. Note that this only
+  emits them to the console log, not any of the output files. Valid values are
+  `True` or `False`. Defaults to `False`.
 - `width=<value>`: Controls the width of the progress box. Defaults to `120`.
 
 
