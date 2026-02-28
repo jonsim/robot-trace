@@ -8,4 +8,9 @@ TEST PASSED WITH ERRORS: Log Error.Log Error
   ✓ PASS     0s
 
 RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed). 1 test raised errors.
+
+Erroring test:
+- Log Error.Log Error:
+  - E This testcase errored
+
 Total elapsed:  0s.

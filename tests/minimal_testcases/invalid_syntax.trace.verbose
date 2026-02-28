@@ -8,4 +8,8 @@ TEST FAILED: Invalid Syntax.Invalid Syntax
   ✗ FAIL     0s
 
 RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Invalid Syntax.Invalid Syntax
+
 Total elapsed:  0s.

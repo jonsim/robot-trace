@@ -53,48 +53,48 @@ class TestANSI(unittest.TestCase):
 
 class TestTraceStack(unittest.TestCase):
     def test_initial_state_trace(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         self.assertEqual(stack.trace, "")
 
     def test_initial_state_errors(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         self.assertFalse(stack.has_errors)
 
     def test_initial_state_warnings(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         self.assertFalse(stack.has_warnings)
 
     def test_push_keyword(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         stack.push_keyword("Keyword A")
         self.assertEqual(stack._depth, 1)
 
     def test_pop_keyword(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         stack.push_keyword("Keyword A")
         stack.pop_keyword()
         self.assertEqual(stack._depth, 0)
 
     def test_flush_keyword_depth(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         stack.push_keyword("Keyword A")
         stack.flush()
         self.assertEqual(stack._depth, 0)
 
     def test_flush_keyword_trace_content(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         stack.push_keyword("Keyword A")
         stack.flush()
         self.assertIn("Keyword A", stack.trace)
 
     def test_append_trace(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         stack.push_keyword("Keyword A")
         stack.append_trace("Hello world")
         self.assertEqual("  Hello world\n", stack.trace)
 
     def test_append_multiline_trace(self):
-        stack = TraceStack()
+        stack = TraceStack("test")
         stack.push_keyword("Keyword A")
         stack.append_trace("Hello world\nLine 2")
         self.assertEqual("  Hello world\n  Line 2\n", stack.trace)
@@ -103,31 +103,31 @@ class TestTraceStack(unittest.TestCase):
 class TestTestStatistics(unittest.TestCase):
     def test_start_suite_counts(self):
         stats = TestStatistics()
-        attributes = {"suites": [1, 2, 3], "totaltests": 10}
+        attributes = {"suites": [1, 2, 3], "totaltests": 10, "longname": "My Suite"}
 
         stats.start_suite("My Suite", attributes)
         self.assertEqual(stats.top_level_test_count, 10)
 
     def test_start_test_increment(self):
         stats = TestStatistics()
-        stats.start_test("My Test", {})
-        self.assertEqual(stats.started_tests, 1)
+        stats.start_test("My Test", {"longname": "My_Suite.My Test"})
+        self.assertEqual(len(stats.started_tests), 1)
 
     def test_end_test_pass(self):
         stats = TestStatistics()
-        attributes = {"status": "PASS"}
+        attributes = {"status": "PASS", "longname": "My_Suite.My Test"}
 
         stats.end_test("My Test", attributes)
-        self.assertEqual(stats.completed_tests, 1)
-        self.assertEqual(stats.passed_tests, 1)
+        self.assertEqual(len(stats.completed_tests), 1)
+        self.assertEqual(len(stats.passed_tests), 1)
 
     def test_end_test_fail(self):
         stats = TestStatistics()
-        attributes = {"status": "FAIL"}
+        attributes = {"status": "FAIL", "longname": "My_Suite.My Test"}
 
         stats.end_test("My Test", attributes)
-        self.assertEqual(stats.completed_tests, 1)
-        self.assertEqual(stats.failed_tests, 1)
+        self.assertEqual(len(stats.completed_tests), 1)
+        self.assertEqual(len(stats.failed_tests), 1)
 
 
 class TestTestTimings(unittest.TestCase):
@@ -189,40 +189,50 @@ class TestStatisticsFormatReturns(unittest.TestCase):
     def test_format_run_results_all_zero(self):
         stats = TestStatistics()
         stats.top_level_test_count = 0
-        stats.completed_tests = 0
-        stats.passed_tests = 0
-        stats.skipped_tests = 0
-        stats.failed_tests = 0
+        stats.completed_tests = []
+        stats.passed_tests = []
+        stats.skipped_tests = []
+        stats.failed_tests = []
 
         expected = "0 tests, 0 completed (0 passed, 0 skipped, 0 failed)."
-        self.assertEqual(stats.format_run_results(), expected)
+        self.assertEqual(stats.format_run_summary(), expected)
 
     def test_format_run_results_one_test(self):
         stats = TestStatistics()
         stats.top_level_test_count = 1
-        stats.completed_tests = 1
-        stats.passed_tests = 1
-        stats.skipped_tests = 0
-        stats.failed_tests = 0
+        stats.completed_tests = ["t1"]
+        stats.passed_tests = ["t1"]
+        stats.skipped_tests = []
+        stats.failed_tests = []
 
         expected = "1 test, 1 completed (1 passed, 0 skipped, 0 failed)."
-        self.assertEqual(stats.format_run_results(), expected)
+        self.assertEqual(stats.format_run_summary(), expected)
 
     def test_format_run_results_with_errors_and_warnings(self):
         stats = TestStatistics()
         stats.top_level_test_count = 2
-        stats.completed_tests = 2
-        stats.passed_tests = 1
-        stats.skipped_tests = 0
-        stats.failed_tests = 1
-        stats.errors = 2
-        stats.warnings = 1
+        stats.completed_tests = ["t1", "t2"]
+        stats.passed_tests = ["t1"]
+        stats.skipped_tests = []
+        stats.failed_tests = ["t2"]
+        stats.errors = {"t1": ["Error 1"]}
+        stats.warnings = {"t1": ["Warn 1"]}
 
         expected = (
             "2 tests, 2 completed (1 passed, 0 skipped, 1 failed). "
-            "2 tests raised errors. 1 test raised warnings."
+            "1 test raised errors. 1 test raised warnings."
         )
-        self.assertEqual(stats.format_run_results(), expected)
+        self.assertEqual(stats.format_run_summary(), expected)
+
+    def test_format_run_results_extra(self):
+        stats = TestStatistics()
+        stats.failed_tests = ["t2"]
+        stats.errors = {"t1": ["error 1"]}
+        stats.warnings = {"t1": ["warn 1"]}
+        res = stats.format_run_results()
+        self.assertIn("Failing test:\n- t2", res)
+        self.assertIn("Erroring test:\n- t1:\n  - error 1", res)
+        self.assertIn("Warning test:\n- t1:\n  - warn 1", res)
 
 
 class TestTimingsFormatETA(unittest.TestCase):
@@ -232,7 +242,7 @@ class TestTimingsFormatETA(unittest.TestCase):
         timings.run_start_time = 100.0  # elapsed = 20s
 
         stats = TestStatistics()
-        stats.completed_tests = 5
+        stats.completed_tests = [1, 2, 3, 4, 5]
         stats.top_level_test_count = 15
 
         # 5 tests took 20s -> 4s per test. 10 remaining -> 40s
@@ -241,7 +251,7 @@ class TestTimingsFormatETA(unittest.TestCase):
     def test_format_eta_unknown(self):
         timings = TestTimings()
         stats = TestStatistics()
-        stats.completed_tests = 0
+        stats.completed_tests = []
         self.assertEqual(timings.format_eta(stats), "unknown")
 
 
@@ -369,7 +379,7 @@ class TestRobotTraceLifecycle(unittest.TestCase):
         attributes = {"suites": [1], "totaltests": 1, "longname": "My_Suite"}
 
         self.listener.start_suite("My_Suite", attributes)
-        self.assertEqual(self.listener.stats.started_suites, 1)
+        self.assertEqual(len(self.listener.stats.started_suites), 1)
 
         end_attributes = {"status": "PASS", "longname": "My_Suite", "message": ""}
         self.listener.end_suite("My_Suite", end_attributes)
@@ -391,7 +401,7 @@ class TestRobotTraceLifecycle(unittest.TestCase):
         }
         self.listener.end_test("My Test", end_test_attributes)
         self.assertFalse(self.listener.in_test)
-        self.assertEqual(self.listener.stats.passed_tests, 1)
+        self.assertEqual(len(self.listener.stats.passed_tests), 1)
         self.assertEqual(self.listener.progress_box.completed_tasks, 1)
 
     def test_test_lifecycle_fail_with_errors(self):
@@ -409,7 +419,7 @@ class TestRobotTraceLifecycle(unittest.TestCase):
             "longname": "My_Suite.My Test",
         }
         self.listener.end_test("My Test", end_test_attributes)
-        self.assertEqual(self.listener.stats.failed_tests, 1)
+        self.assertEqual(len(self.listener.stats.failed_tests), 1)
 
 
 class TestRobotTraceKeywords(unittest.TestCase):
@@ -463,7 +473,7 @@ class TestRobotTraceLogging(unittest.TestCase):
         attributes = {"level": "WARN", "message": "A warning\nLine 2"}
         self.listener.log_message(attributes)
 
-        self.assertEqual(self.listener.stats.warnings, 1)
+        self.assertEqual(len(self.listener.stats.warnings), 1)
         self.assertTrue(self.listener.test_trace_stack.has_warnings)
         self.assertIn("W A warning", self.listener.test_trace_stack.trace)
         self.assertIn("Line 2", self.listener.test_trace_stack.trace)
@@ -472,7 +482,7 @@ class TestRobotTraceLogging(unittest.TestCase):
         attributes = {"level": "ERROR", "message": "An error"}
         self.listener.log_message(attributes)
 
-        self.assertEqual(self.listener.stats.errors, 1)
+        self.assertEqual(len(self.listener.stats.errors), 1)
         self.assertTrue(self.listener.test_trace_stack.has_errors)
         self.assertIn("E An error", self.listener.test_trace_stack.trace)
 
@@ -489,7 +499,7 @@ class TestRobotTraceClose(unittest.TestCase):
 
         listener = RobotTrace(console_progress="NONE", verbosity="NORMAL")
         listener.stats.top_level_test_count = 1
-        listener.stats.completed_tests = 1
+        listener.stats.completed_tests = ["t1"]
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
             listener.close()

@@ -13,4 +13,8 @@ TEST FAILED: Run Keywords Failing.Test That Calls Run Keywords
   ✗ FAIL     0s
 
 RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Run Keywords Failing.Test That Calls Run Keywords
+
 Total elapsed:  0s.

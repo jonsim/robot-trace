@@ -25,4 +25,8 @@ TEST FAILED: For Failing.FOR Failing
   ✗ FAIL     0s
 
 RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- For Failing.FOR Failing
+
 Total elapsed:  0s.

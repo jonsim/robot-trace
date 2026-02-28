@@ -20,4 +20,8 @@ TEST FAILED: Nested Keywords Failing.Nested Failing Test Case
   ✗ FAIL     0s
 
 RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Nested Keywords Failing.Nested Failing Test Case
+
 Total elapsed:  0s.

@@ -15,4 +15,8 @@ SUITE FAILED: Suite Setup Failing
   ✗ FAIL     0s
 
 RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Suite Setup Failing.Test Case 1
+
 Total elapsed:  0s.

@@ -17,4 +17,9 @@ TEST FAILED: Multiple 2Failing.Failing Testcase 2
   ✗ FAIL     0s
 
 RUN COMPLETE: 2 tests, 2 completed (0 passed, 0 skipped, 2 failed).
+
+Failing tests:
+- Multiple 2Failing.Failing Testcase 1
+- Multiple 2Failing.Failing Testcase 2
+
 Total elapsed:  0s.

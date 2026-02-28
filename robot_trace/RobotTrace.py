@@ -147,7 +147,8 @@ class ANSI:
 
 
 class TraceStack:
-    def __init__(self):
+    def __init__(self, name: str):
+        self.name = name
         self._trace: str = ""
         self._depth: int = 0
         self._stack: list[str] = []
@@ -155,7 +156,8 @@ class TraceStack:
         self.has_errors: bool = False
         self.has_failures: bool = False
 
-    def clear(self):
+    def reset(self, name: str):
+        self.name = name
         self._trace = ""
         self._depth = 0
         self._stack.clear()
@@ -197,56 +199,93 @@ class TraceStack:
 class TestStatistics:
     def __init__(self):
         self.top_level_test_count: int | None = None
-        self.started_suites = 0
-        self.started_tests = 0
-        self.passed_tests = 0
-        self.skipped_tests = 0
-        self.failed_tests = 0
-        self.completed_tests = 0
-        self.warnings = 0
-        self.errors = 0
+        self.started_suites = []
+        self.started_tests = []
+        self.passed_tests = []
+        self.skipped_tests = []
+        self.failed_tests = []
+        self.completed_tests = []
+        self.completed_suites = []
+        self.warnings: dict[str, list[str]] = {}
+        self.errors: dict[str, list[str]] = {}
 
-    def start_suite(self, _, attributes):
-        self.started_suites += 1
+    def start_suite(self, name, attributes):
+        suite_name = attributes["longname"]
+        self.started_suites.append(suite_name)
         if self.top_level_test_count is None:
             self.top_level_test_count = attributes["totaltests"]
 
-    def start_test(self, _, __):
-        self.started_tests += 1
+    def end_suite(self, name, attributes):
+        suite_name = attributes["longname"]
+        self.completed_suites.append(suite_name)
 
-    def end_test(self, _, attributes):
+    def start_test(self, name, attributes):
+        test_name = attributes["longname"]
+        self.started_tests.append(test_name)
+
+    def end_test(self, name, attributes):
         status = attributes["status"]
+        test_name = attributes["longname"]
         if status == "NOT RUN":
             return
-        self.completed_tests += 1
+        self.completed_tests.append(test_name)
         if status == "PASS":
-            self.passed_tests += 1
+            self.passed_tests.append(test_name)
         elif status == "FAIL":
-            self.failed_tests += 1
+            self.failed_tests.append(test_name)
         elif status == "SKIP":
-            self.skipped_tests += 1
+            self.skipped_tests.append(test_name)
+
+    def log_error(self, name: str, text: str):
+        self.errors.setdefault(name, []).append(text)
+
+    def log_warning(self, name: str, text: str):
+        self.warnings.setdefault(name, []).append(text)
 
     def format_suite_progress(self) -> str:
-        return f"{self.started_suites:2d}"
+        return f"{len(self.started_suites):2d}"
 
     def format_test_progress(self) -> str:
-        return f"{self.started_tests:2d}/{self.top_level_test_count:2d}"
+        return f"{len(self.started_tests):2d}/{self.top_level_test_count:2d}"
 
-    def format_run_results(self) -> str:
+    def format_run_summary(self) -> str:
         plural = "s" if self.top_level_test_count != 1 else ""
-        results = (
+        summary = (
             f"{self.top_level_test_count or 0} test{plural}, "
-            f"{self.completed_tests} completed "
-            f"({self.passed_tests} passed, "
-            f"{self.skipped_tests} skipped, "
-            f"{self.failed_tests} failed)."
+            f"{len(self.completed_tests)} completed "
+            f"({len(self.passed_tests)} passed, "
+            f"{len(self.skipped_tests)} skipped, "
+            f"{len(self.failed_tests)} failed)."
         )
         if self.errors:
-            plural = "s" if self.errors != 1 else ""
-            results += f" {self.errors} test{plural} raised errors."
+            plural = "s" if len(self.errors) != 1 else ""
+            summary += f" {len(self.errors)} test{plural} raised errors."
         if self.warnings:
-            plural = "s" if self.warnings != 1 else ""
-            results += f" {self.warnings} test{plural} raised warnings."
+            plural = "s" if len(self.warnings) != 1 else ""
+            summary += f" {len(self.warnings)} test{plural} raised warnings."
+        return summary
+
+    def format_run_results(self) -> str:
+        results = ""
+        if self.failed_tests:
+            plural = "s" if len(self.failed_tests) != 1 else ""
+            results += f"Failing test{plural}:\n"
+            for test in self.failed_tests:
+                results += f"- {test}\n"
+        if self.errors:
+            plural = "s" if len(self.errors) != 1 else ""
+            results += f"Erroring test{plural}:\n"
+            for test, messages in self.errors.items():
+                results += f"- {test}:\n"
+                for message in messages:
+                    results += f"  - {message}\n"
+        if self.warnings:
+            plural = "s" if len(self.warnings) != 1 else ""
+            results += f"Warning test{plural}:\n"
+            for test, messages in self.warnings.items():
+                results += f"- {test}:\n"
+                for message in messages:
+                    results += f"  - {message}\n"
         return results
 
 
@@ -292,10 +331,10 @@ class TestTimings:
         return self.format_time(self.get_elapsed_time())
 
     def format_eta(self, stats: TestStatistics) -> str:
-        if stats.completed_tests and stats.top_level_test_count:
+        if stats.top_level_test_count and stats.completed_tests:
             elapsed_time = self.get_elapsed_time()
-            avg_test_time = elapsed_time / stats.completed_tests
-            remaining_tests = stats.top_level_test_count - stats.completed_tests
+            avg_test_time = elapsed_time / len(stats.completed_tests)
+            remaining_tests = stats.top_level_test_count - len(stats.completed_tests)
             eta_time = avg_test_time * remaining_tests
             return self.format_time(eta_time)
         return "unknown"
@@ -471,8 +510,8 @@ class RobotTrace:
         self.progress_box = ProgressBox(progress_stream, self.terminal_width)
         self.stats = TestStatistics()
         self.timings = TestTimings()
-        self.test_trace_stack = TraceStack()
-        self.suite_trace_stack = TraceStack()
+        self.test_trace_stack = TraceStack("<prerun>")
+        self.suite_trace_stack = TraceStack("<prerun>")
 
         # On Windows, import colorama if we're coloring output.
         if self.colors and sys.platform == "win32":
@@ -523,19 +562,20 @@ class RobotTrace:
     # ------------------------------------------------------------------ suite
 
     def start_suite(self, name, attributes):
+        suite_name = attributes["longname"]
         self.stats.start_suite(name, attributes)
         if self.stats.top_level_test_count is not None:
             self.progress_box.total_tasks = self.stats.top_level_test_count
         self.timings.start_suite()
-        self.suite_trace_stack.clear()
+        self.suite_trace_stack.reset(suite_name)
 
-        suite_name = attributes["longname"]
         self.progress_box.write_line(
             0, f"[SUITE {self.stats.format_suite_progress()}] {suite_name}"
         )
 
     def end_suite(self, name, attributes):
         trace = self.suite_trace_stack.trace
+        self.stats.end_suite(name, attributes)
 
         self.progress_box.write_line(0)
 
@@ -568,14 +608,15 @@ class RobotTrace:
                 trace = f"{status_line}\n{underline}\n{trace}"
                 self._print_trace(trace)
 
-        self.suite_trace_stack.clear()
+        # self.suite_trace_stack.reset("<prerun>")
 
     # ------------------------------------------------------------------ test
 
     def start_test(self, name, attributes):
+        test_name = attributes["longname"]
         self.stats.start_test(name, attributes)
         self.timings.start_test()
-        self.test_trace_stack.clear()
+        self.test_trace_stack.reset(test_name)
 
         self.progress_box.write_line(
             1,
@@ -623,7 +664,7 @@ class RobotTrace:
                     trace = attributes["message"] + "\n"
                 trace = f"{status_line}\n{underline}\n{trace}"
                 self._print_trace(trace)
-        self.test_trace_stack.clear()
+        # self.test_trace_stack.reset("<prerun>")
 
     # ------------------------------------------------------------------ keyword
 
@@ -716,10 +757,10 @@ class RobotTrace:
                 lines = [ANSI.Fore.WHITE(line) for line in lines]
 
         if level == "ERROR":
-            self.stats.errors += 1
+            self.stats.log_error(stack.name, "\n".join(lines))
             stack.has_errors = True
         elif level == "WARN":
-            self.stats.warnings += 1
+            self.stats.log_warning(stack.name, "\n".join(lines))
             stack.has_warnings = True
         elif level == "FAIL":
             stack.has_failures = True
@@ -732,7 +773,11 @@ class RobotTrace:
         self.progress_box.clear()
 
         if self.verbosity >= Verbosity.QUIET:
-            self._writeln("RUN COMPLETE: " + self.stats.format_run_results())
+            self._writeln("RUN COMPLETE: " + self.stats.format_run_summary())
+        if self.verbosity >= Verbosity.NORMAL:
+            run_results = self.stats.format_run_results()
+            if run_results:
+                self._writeln("\n" + run_results)
 
         if (
             self.timings.run_start_time is not None
