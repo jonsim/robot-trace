@@ -1,0 +1,19 @@
+TEST FAILED: If Else Failing.IF-ELSE Failing Branch
+═══════════════════════════════════════════════════
+▶ ELSE
+  ▶ BuiltIn.Log('Taken branch - should appear')
+    I Taken branch - should appear
+    ✓ PASS     0s
+  ▶ BuiltIn.Evaluate('1 + 1')
+    I ${result} = 2
+    ✓ PASS     0s
+  ▶ BuiltIn.Should Be Equal As Numbers('${result}', '4')
+    I Argument types are:
+      <class 'int'>
+      <class 'str'>
+    F 2.0 != 4.0
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+Total elapsed:  0s.

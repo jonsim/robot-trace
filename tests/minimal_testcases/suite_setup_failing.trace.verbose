@@ -1,0 +1,18 @@
+TEST FAILED: Suite Setup Failing.Test Case 1
+════════════════════════════════════════════
+Parent suite setup failed:
+The keyword failed
+
+SUITE FAILED: Suite Setup Failing
+═════════════════════════════════
+▶ SETUP    Do Suite Setup()
+  ▶ BuiltIn.Log('Doing suite setup')
+    I Doing suite setup
+    ✓ PASS     0s
+  ▶ BuiltIn.Fail('The keyword failed')
+    F The keyword failed
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+Total elapsed:  0s.

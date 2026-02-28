@@ -1,0 +1,72 @@
+TEST PASSED: For Passing.FOR Passing
+════════════════════════════════════
+▶ FOR    ${i}    IN RANGE    5
+  ▶ ITERATION    ${i} = 0
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 0
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('(${i} + ${i}) / 2')
+      I ${result} = 0.0
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${i}')
+      I Argument types are:
+        <class 'float'>
+        <class 'int'>
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 1
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 1
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('(${i} + ${i}) / 2')
+      I ${result} = 1.0
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${i}')
+      I Argument types are:
+        <class 'float'>
+        <class 'int'>
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 2
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 2
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('(${i} + ${i}) / 2')
+      I ${result} = 2.0
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${i}')
+      I Argument types are:
+        <class 'float'>
+        <class 'int'>
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 3
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 3
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('(${i} + ${i}) / 2')
+      I ${result} = 3.0
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${i}')
+      I Argument types are:
+        <class 'float'>
+        <class 'int'>
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 4
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 4
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('(${i} + ${i}) / 2')
+      I ${result} = 4.0
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${i}')
+      I Argument types are:
+        <class 'float'>
+        <class 'int'>
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

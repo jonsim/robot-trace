@@ -1,0 +1,13 @@
+TEST FAILED: Test Setup Failing.Test Case 1
+═══════════════════════════════════════════
+▶ SETUP    Do Test Setup()
+  ▶ BuiltIn.Log('Doing test setup')
+    I Doing test setup
+    ✓ PASS     0s
+  ▶ BuiltIn.Fail('The keyword failed')
+    F The keyword failed
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+Total elapsed:  0s.
