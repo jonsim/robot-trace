@@ -391,25 +391,31 @@ class TestProgressBox(unittest.TestCase):
     def test_setters_redraw(self):
         with (
             patch.object(self.box, "draw") as mock_draw,
+            patch.object(self.box, "draw_progress_bar") as mock_draw_progress_bar,
             patch.object(self.box, "clear") as mock_clear,
         ):
             self.box.total_tasks = 5
-            mock_clear.assert_called_once()
-            mock_draw.assert_called_once()
+            mock_clear.assert_not_called()
+            mock_draw.assert_not_called()
+            mock_draw_progress_bar.assert_called_once()
 
             mock_clear.reset_mock()
             mock_draw.reset_mock()
+            mock_draw_progress_bar.reset_mock()
 
             self.box.add_task_status("PASS")
-            mock_clear.assert_called_once()
-            mock_draw.assert_called_once()
+            mock_clear.assert_not_called()
+            mock_draw.assert_not_called()
+            mock_draw_progress_bar.assert_called_once()
 
             # No redraw if value unchanged
             mock_clear.reset_mock()
             mock_draw.reset_mock()
+            mock_draw_progress_bar.reset_mock()
             self.box._task_statuses = ["PASS"] * 2
             mock_clear.assert_not_called()
             mock_draw.assert_not_called()
+            mock_draw_progress_bar.assert_not_called()
 
     def test_write_line_truncation(self):
         left = "A" * 100

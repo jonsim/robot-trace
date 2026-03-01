@@ -611,7 +611,7 @@ class ProgressBox:
         self._total_tasks = None
         self._task_statuses = []
 
-    def draw(self):
+    def draw_progress_bar(self):
         if not self.stream:
             return
 
@@ -657,6 +657,13 @@ class ProgressBox:
             # Otherwise just draw a solid top border.
             self.stream.write("┌" + "─" * (self.width - 2) + "┐\n")
 
+    def draw(self):
+        if not self.stream:
+            return
+
+        # Draw the top border of the box.
+        self.draw_progress_bar()
+
         # Write the three lines of text.
         text_width = self.width - 4
         for i in range(3):
@@ -675,14 +682,26 @@ class ProgressBox:
         assert value > 0, "total_tasks must be positive"
         old_value = self._total_tasks
         self._total_tasks = value
+        if not self.stream:
+            return
         if old_value != value:
-            self.clear()
-            self.draw()
+            # Move the cursor up to the top of the box and draw the progress bar.
+            self.stream.write(ANSI.Cursor.UP(4) + ANSI.Cursor.HOME)
+            self.draw_progress_bar()
+            # Move the cursor back down to the bottom of the box.
+            self.stream.write(ANSI.Cursor.DOWN(3))
+            self.stream.flush()
 
     def add_task_status(self, status: str):
         self._task_statuses.append(status)
-        self.clear()
-        self.draw()
+        if not self.stream:
+            return
+        # Move the cursor up to the top of the box and draw the progress bar.
+        self.stream.write(ANSI.Cursor.UP(4) + ANSI.Cursor.HOME)
+        self.draw_progress_bar()
+        # Move the cursor back down to the bottom of the box.
+        self.stream.write(ANSI.Cursor.DOWN(3))
+        self.stream.flush()
 
     def clear(self):
         if not self.stream:
