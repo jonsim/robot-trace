@@ -776,14 +776,21 @@ class ProgressBox:
 
 
 class RobotTraceArgs:
+    DEFAULT_VERBOSITY: str = "NORMAL"
+    DEFAULT_COLORS: str = "AUTO"
+    DEFAULT_CONSOLE_PROGRESS: str = "AUTO"
+    DEFAULT_TRACE_SUBPROCESSES: bool = False
+    DEFAULT_WIDTH: int = 120
+    DEFAULT_CAN_STREAM_OUTPUT: bool = True
+
     def __init__(
         self,
-        verbosity: str,
-        colors: str,
-        console_progress: str,
-        trace_subprocesses: bool,
-        width: int,
-        can_stream_output: bool,
+        verbosity: str = DEFAULT_VERBOSITY,
+        colors: str = DEFAULT_COLORS,
+        console_progress: str = DEFAULT_CONSOLE_PROGRESS,
+        trace_subprocesses: bool = DEFAULT_TRACE_SUBPROCESSES,
+        width: int = DEFAULT_WIDTH,
+        can_stream_output: bool = DEFAULT_CAN_STREAM_OUTPUT,
     ):
         # Parse verbosity argument.
         verbosity = verbosity.upper()
@@ -896,12 +903,12 @@ class RobotTrace:
 
     def __init__(
         self,
-        verbosity: str = "NORMAL",
-        colors: str = "AUTO",
-        console_progress: str = "AUTO",
-        trace_subprocesses: bool = False,
-        width: int = 120,
-        can_stream_output: bool = True,
+        verbosity: str = RobotTraceArgs.DEFAULT_VERBOSITY,
+        colors: str = RobotTraceArgs.DEFAULT_COLORS,
+        console_progress: str = RobotTraceArgs.DEFAULT_CONSOLE_PROGRESS,
+        trace_subprocesses: bool = RobotTraceArgs.DEFAULT_TRACE_SUBPROCESSES,
+        width: int = RobotTraceArgs.DEFAULT_WIDTH,
+        can_stream_output: bool = RobotTraceArgs.DEFAULT_CAN_STREAM_OUTPUT,
     ):
         # Parse arguments.
         self.args = RobotTraceArgs(
