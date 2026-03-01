@@ -606,10 +606,12 @@ class ProgressBox:
         self.stream = stream
         self.colors = colors
         self.width = width
-        self._lines = ["", "", ""]
+        self._lines = ["" * (width - 4)] * 3
         self._display_progress_bar = width >= 40
         self._total_tasks = None
         self._task_statuses = []
+        self._top_border = "┌" + "─" * (self.width - 2) + "┐"
+        self._bottom_border = "└" + "─" * (self.width - 2) + "┘"
 
     def draw_progress_bar(self):
         if not self.stream:
@@ -650,12 +652,15 @@ class ProgressBox:
                     progress_bar += "█"
             progress_bar += "░" * bar_remaining
 
-            self.stream.write(
-                "┌" + "─" * 6 + "┤" + progress_bar + "├" + "─" * 6 + "┐\n"
-            )
+            self.stream.write("┌" + "─" * 6 + "┤" + progress_bar + "├" + "─" * 6 + "┐")
         else:
-            # Otherwise just draw a solid top border.
-            self.stream.write("┌" + "─" * (self.width - 2) + "┐\n")
+            # Otherwise just draw the solid top border.
+            self.stream.write(self._top_border)
+
+    def draw_status_line(self, line_no: int):
+        if not self.stream:
+            return
+        self.stream.write(f"│ {self._lines[line_no]} │")
 
     def draw(self):
         if not self.stream:
@@ -663,14 +668,15 @@ class ProgressBox:
 
         # Draw the top border of the box.
         self.draw_progress_bar()
+        self.stream.write("\n")
 
         # Write the three lines of text.
-        text_width = self.width - 4
         for i in range(3):
-            self.stream.write(f"│ {self._lines[i]:<{text_width}.{text_width}} │\n")
+            self.draw_status_line(i)
+            self.stream.write("\n")
 
         # Write the bottom border.
-        self.stream.write("└" + "─" * (self.width - 2) + "┘")
+        self.stream.write(self._bottom_border)
         self.stream.flush()
 
     @property
@@ -689,7 +695,7 @@ class ProgressBox:
             self.stream.write(ANSI.Cursor.UP(4) + ANSI.Cursor.HOME)
             self.draw_progress_bar()
             # Move the cursor back down to the bottom of the box.
-            self.stream.write(ANSI.Cursor.DOWN(3))
+            self.stream.write(ANSI.Cursor.DOWN(4))
             self.stream.flush()
 
     def add_task_status(self, status: str):
@@ -700,7 +706,7 @@ class ProgressBox:
         self.stream.write(ANSI.Cursor.UP(4) + ANSI.Cursor.HOME)
         self.draw_progress_bar()
         # Move the cursor back down to the bottom of the box.
-        self.stream.write(ANSI.Cursor.DOWN(3))
+        self.stream.write(ANSI.Cursor.DOWN(4))
         self.stream.flush()
 
     def clear(self):
@@ -738,8 +744,8 @@ class ProgressBox:
         assert line_no >= 0 and line_no < 3, "line_no must be between 0 and 2"
         self._lines[line_no] = text
         line_offset = 3 - line_no
-        self.stream.write(ANSI.Cursor.UP(line_offset))
-        self.stream.write(ANSI.Cursor.HOME + f"│ {text} │")
+        self.stream.write(ANSI.Cursor.UP(line_offset) + ANSI.Cursor.HOME)
+        self.draw_status_line(line_no)
         # Move cursor back down to the bottom of the box.
         self.stream.write(ANSI.Cursor.DOWN(line_offset))
         self.stream.flush()
