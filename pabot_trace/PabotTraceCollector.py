@@ -122,11 +122,12 @@ class ExecutorProgressBox(ProgressBox):
         super().__init__(stream, (executors + 1) // 2, colors, width)
         self._executors = executors
         self._executor_statuses: list[str] = [""] * executors
-        half_width = (self.width - 3) // 2
-        self._top_border = "┌" + "─" * half_width + "┬" + "─" * half_width + "┐"
-        self._bottom_border = "└" + "─" * half_width + "┴" + "─" * half_width + "┘"
+        left_width = (self.width - 3) // 2
+        right_width = self.width - 3 - left_width
+        self._top_border = "┌" + "─" * left_width + "┬" + "─" * right_width + "┐"
+        self._bottom_border = "└" + "─" * left_width + "┴" + "─" * right_width + "┘"
         for i in range(len(self._lines)):
-            self._lines[i] = " " * (half_width - 1) + "│" + " " * (half_width - 1)
+            self._lines[i] = " " * (left_width - 1) + "│" + " " * (right_width - 1)
 
     def write_executor_status(self, executor_no: int, status: str = ""):
         assert executor_no < len(self._executor_statuses), (
