@@ -1,15 +1,23 @@
-# RobotFramework CLI Progress Listener
+# Alternative RobotFramework CLI Frontend
 
-A lightweight Robot Framework listener that provides real-time progress updates
-directly on the command-line during test execution. The main design intention is
-you don't need to open the HTML files directly to debug failing tests.
+A lightweight Robot Framework CLI Frontend that provides real-time progress
+updates directly on the command-line during test execution. The main design
+intention is that you shouldn't need to open the HTML files directly to debug
+failing tests - the information you need should be on the CLI, in as concise
+and intuitive a format as possible.
 
 ## Features
+- Provides a new `robot-trace` front-end, which is a drop-in replacement for
+  `robot`.
+- Provides a new `pabot-trace` front-end, which is a drop-in replacement for
+  `pabot` (if you have it installed - there is no need to install this package
+  if you don't).
 - Displays test execution progress in the CLI.
 - Provides a clear and concise overview of running tests.
 - Provides a full, intuitive trace of any failing tests.
+- Configurable output.
 
-## Usage
+## Robot Usage
 The listener supports three different usage models:
 
 ### 1. As a separate command-line tool
@@ -115,9 +123,43 @@ You may also consider calling `robot` or `robot-trace` with:
 - `--maxassignlength=10000` to avoid truncating all but the longest variables.
 
 
-## Example Output
-![](https://raw.githubusercontent.com/jonsim/robot-trace/main/output_demo.gif)
+## Pabot Usage
+For `pabot`, due to the complexity of the tool and the lack of comprehensive
+API entrypoints, the listener supports a single usage model:
 
+### As a separate command-line tool
+#### Installation
+```sh
+pip install robotframework-trace
+```
+
+#### Usage
+```sh
+pabot-trace path/to/tests
+```
+
+#### Details
+You don't need to remember any extra arguments to pass to pabot - the runner
+automatically passes the correct arguments to pabot and bases its own command
+line from the arguments you pass to pabot. This gives a drop-in replacement
+for any existing `pabot` command lines.
+
+The `pabot-trace` command is a thin wrapper on top of `pabot` - it passes all
+arguments it receives straight through, while adding additional arguments to
+ensure the listener output works properly.
+
+All arguments match those of `robot-trace` - see the [Robot Usage](#robot-usage)
+section for details.
+
+
+## Example Output
+### Robot
+![](https://raw.githubusercontent.com/jonsim/robot-trace/main/robot_trace_demo.gif)
+
+### Pabot
+![](https://raw.githubusercontent.com/jonsim/robot-trace/main/pabot_trace_demo.gif)
+
+### Redirected Output
 You can also redirect the output to a file to get the same output without the
 live progress reporting:
 ```sh
@@ -143,8 +185,12 @@ TEST FAILED: Example.Nested Keywords Failing.Nested Failing Test Case
     ✗ FAIL     0s
   ✗ FAIL     0s
 
-RUN COMPLETE: 13 tests, 13 completed (12 passed, 0 skipped, 1 failed).
-Total elapsed:  3s.
+RUN COMPLETE: 14 tests, 14 completed (13 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Example.Nested Keywords Failing.Nested Failing Test Case
+
+Total elapsed:  5s.
 ```
 
 ## Requirements
