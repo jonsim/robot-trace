@@ -196,6 +196,7 @@ Total elapsed:  5s.
 ## Requirements
 - Python 3.6+
 - Robot Framework 5.0+
+- (Optional) pabot 5.0+
 
 The script has no dependencies beyond the standard library. On Windows to get
 colorized output, you need to install the `colorama` package, however the script

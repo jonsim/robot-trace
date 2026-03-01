@@ -70,8 +70,6 @@ def main():
         "pabot",
         "--pabotprerunmodifier",
         "pabot_trace.PabotTestCountReporter",
-        "--pabotconsole",
-        "none",
         "--console=quiet",
         "--listener",
         listener,
@@ -111,7 +109,7 @@ def main():
                 collector.print_summary = False
         # If the process failed because of an internal error (likely when
         # parsing arguments or in the listener itself), print the error message.
-        if result.returncode > 250:
+        if result.returncode != 253 and result.returncode > 250:
             sys.stdout.write(result.stdout.decode())
             sys.stderr.write(result.stderr.decode())
         sys.exit(result.returncode)
