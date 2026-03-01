@@ -246,9 +246,8 @@ class StreamedTracePrinter:
 
 
 class PabotTraceCollector:
-    def __init__(self, stream, process_count: int, progress_box: ProgressBox):
+    def __init__(self, stream, progress_box: ProgressBox):
         self.stream = stream
-        self.process_count = process_count
         self.progress_box = progress_box
         self.verbosity = Verbosity.NORMAL
         self.stats = ThreadedTestStatistics()

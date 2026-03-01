@@ -428,11 +428,8 @@ class TestPabotTraceCollectorInit(unittest.TestCase):
         self.stream = StringIO()
         self.progress_box = MagicMock(spec=ProgressBox)
         self.collector = PabotTraceCollector(
-            self.stream, process_count=4, progress_box=self.progress_box
+            self.stream, progress_box=self.progress_box
         )
-
-    def test_initial_process_count(self):
-        self.assertEqual(self.collector.process_count, 4)
 
     def test_initial_print_summary_true(self):
         self.assertTrue(self.collector.print_summary)
@@ -458,7 +455,7 @@ class TestPabotTraceCollectorWriteln(unittest.TestCase):
         self.stream = StringIO()
         self.progress_box = MagicMock(spec=ProgressBox)
         self.collector = PabotTraceCollector(
-            self.stream, process_count=2, progress_box=self.progress_box
+            self.stream, progress_box=self.progress_box
         )
         self.collector.stream = self.stream
 
@@ -476,7 +473,7 @@ class TestPabotTraceCollectorPrintTrace(unittest.TestCase):
         self.stream = StringIO()
         self.progress_box = MagicMock(spec=ProgressBox)
         self.collector = PabotTraceCollector(
-            self.stream, process_count=2, progress_box=self.progress_box
+            self.stream, progress_box=self.progress_box
         )
         self.collector.stream = self.stream
 
@@ -518,9 +515,7 @@ class TestPabotTraceCollectorContextManager(unittest.TestCase):
         self.thread_patcher.stop()
 
     def _make_collector(self):
-        collector = PabotTraceCollector(
-            StringIO(), process_count=2, progress_box=self.progress_box
-        )
+        collector = PabotTraceCollector(StringIO(), progress_box=self.progress_box)
         return collector
 
     def test_enter_sets_run_start_time(self):
@@ -603,9 +598,7 @@ class TestPabotTraceCollectorSummary(unittest.TestCase):
         self.thread_patcher.stop()
 
     def _run_collector(self, **kwargs):
-        collector = PabotTraceCollector(
-            self.stream, process_count=2, progress_box=self.progress_box
-        )
+        collector = PabotTraceCollector(self.stream, progress_box=self.progress_box)
         for k, v in kwargs.items():
             setattr(collector, k, v)
         with collector:

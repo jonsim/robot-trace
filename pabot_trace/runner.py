@@ -76,17 +76,6 @@ def main():
         *args.robot_args,
     ]
 
-    # Determine the number of processes to use.
-    try:
-        import pabot.arguments
-
-        args, pabot_args = pabot.arguments._parse_pabot_args(cmd)
-        processes = int(pabot_args["processes"])
-    except Exception:
-        import multiprocessing
-
-        processes = max(2, multiprocessing.cpu_count())
-
     # Create the reporting mechanism.
     progress_box = ExecutorProgressBox(
         tl_args.progress_stream,
@@ -96,7 +85,7 @@ def main():
 
     # Start the collector server.
     try:
-        with PabotTraceCollector(sys.stdout, processes, progress_box) as collector:
+        with PabotTraceCollector(sys.stdout, progress_box) as collector:
             env = os.environ.copy()
             env["_PABOT_TRACE_COLLECTOR_PORT"] = str(collector.port)
             result = subprocess.run(cmd, capture_output=True, env=env)
