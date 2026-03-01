@@ -25,6 +25,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+import os
 import subprocess
 import sys
 
@@ -94,7 +95,9 @@ def main():
     # Start the collector server.
     try:
         with PabotTraceCollector(sys.stdout, processes, progress_box) as collector:
-            result = subprocess.run(cmd, capture_output=True)
+            env = os.environ.copy()
+            env["_PABOT_TRACE_COLLECTOR_PORT"] = str(collector.port)
+            result = subprocess.run(cmd, capture_output=True, env=env)
             # Pabot returns 253 if you pass useful arguments like `--no-rebot`,
             # so basically ignore the 253 return code. Sadly this return code
             # also overrides everything else, meaning you lose a programmatic

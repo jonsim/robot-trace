@@ -1,9 +1,9 @@
+import os
 from xmlrpc.client import Binary, ServerProxy
 
 from robot_trace.RobotTrace import RobotTrace, RobotTraceArgs
 
 HOST = "127.0.0.1"
-PORT = 5292
 
 
 class PabotTraceReporter(RobotTrace):
@@ -25,7 +25,8 @@ class PabotTraceReporter(RobotTrace):
             can_stream_output=False,  # Never stream output from a reporter.
         )
         # Connect to the collector server
-        self.proxy = ServerProxy(f"http://{HOST}:{PORT}/", allow_none=True)
+        port = int(os.environ["_PABOT_TRACE_COLLECTOR_PORT"])
+        self.proxy = ServerProxy(f"http://{HOST}:{port}/", allow_none=True)
         self._uid = None
         self._queue_index = None
         self._pool_id = None

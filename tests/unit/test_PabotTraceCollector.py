@@ -498,6 +498,7 @@ class TestPabotTraceCollectorContextManager(unittest.TestCase):
         self.progress_box = MagicMock(spec=ProgressBox)
 
         self.mock_server = MagicMock()
+        self.mock_server.server_address = ("127.0.0.1", 1234)
         self.mock_thread = MagicMock()
 
         self.server_patcher = patch(

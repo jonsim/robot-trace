@@ -15,8 +15,13 @@ class PabotTraceReporterTestBase(unittest.TestCase):
         self.orig_stderr = sys.__stderr__
         sys.__stdout__ = StringIO()
         sys.__stderr__ = StringIO()
+        self.env_patcher = patch.dict(
+            "os.environ", {"_PABOT_TRACE_COLLECTOR_PORT": "5292"}
+        )
+        self.env_patcher.start()
 
     def tearDown(self):
+        self.env_patcher.stop()
         super().tearDown()
         sys.__stdout__ = self.orig_stdout
         sys.__stderr__ = self.orig_stderr

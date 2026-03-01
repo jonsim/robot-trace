@@ -33,7 +33,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 from robot_trace.RobotTrace import ProgressBox, TestStatistics, TestTimings, Verbosity
 
 HOST = "127.0.0.1"
-PORT = 5292
+PORT = 0
 
 
 class ThreadedXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):
@@ -236,6 +236,7 @@ class PabotTraceCollector:
         self.run_start_time = None
         self.server: ThreadedXMLRPCServer = None
         self.server_thread: threading.Thread = None
+        self.port: int = 0
 
         # Finally, prepare the console interface.
         self.progress_box.draw()
@@ -263,6 +264,7 @@ class PabotTraceCollector:
         self.server = ThreadedXMLRPCServer(
             (HOST, PORT), allow_none=True, logRequests=False
         )
+        self.port = int(self.server.server_address[1])
         self.server.register_function(
             trace_writer.report_test_count, "report_test_count"
         )

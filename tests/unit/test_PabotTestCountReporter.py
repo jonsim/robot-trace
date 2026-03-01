@@ -14,8 +14,13 @@ class TestPabotTestCountReporterVisitSuite(unittest.TestCase):
             return_value=self.mock_proxy,
         )
         self.proxy_patcher.start()
+        self.env_patcher = patch.dict(
+            "os.environ", {"_PABOT_TRACE_COLLECTOR_PORT": "1234"}
+        )
+        self.env_patcher.start()
 
     def tearDown(self):
+        self.env_patcher.stop()
         self.proxy_patcher.stop()
 
     def _make_suite(self, test_count):
@@ -39,15 +44,13 @@ class TestPabotTestCountReporterVisitSuite(unittest.TestCase):
         self.mock_proxy.report_test_count.assert_called_once_with(9999)
 
     def test_visit_suite_creates_proxy_to_correct_host_port(self):
-        from pabot_trace.PabotTestCountReporter import HOST, PORT
-
         suite = self._make_suite(1)
         with patch(
             "pabot_trace.PabotTestCountReporter.ServerProxy",
             return_value=self.mock_proxy,
         ) as mock_cls:
             self.reporter.visit_suite(suite)
-            mock_cls.assert_called_once_with(f"http://{HOST}:{PORT}/", allow_none=True)
+            mock_cls.assert_called_once_with("http://127.0.0.1:1234/", allow_none=True)
 
     def test_visit_suite_called_multiple_times_creates_new_proxy_each_time(self):
         suite = self._make_suite(5)
