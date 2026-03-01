@@ -602,11 +602,12 @@ class TestTimings:
 
 
 class ProgressBox:
-    def __init__(self, stream, colors: bool, width: int = 120):
+    def __init__(self, stream, status_line_count: int, colors: bool, width: int = 120):
         self.stream = stream
         self.colors = colors
         self.width = width
-        self._lines = ["" * (width - 4)] * 3
+        self._line_count = status_line_count
+        self._lines = [" " * (width - 4)] * status_line_count
         self._display_progress_bar = width >= 40
         self._total_tasks = None
         self._task_statuses = []
@@ -670,8 +671,8 @@ class ProgressBox:
         self.draw_progress_bar()
         self.stream.write("\n")
 
-        # Write the three lines of text.
-        for i in range(3):
+        # Write the lines of text.
+        for i in range(self._line_count):
             self.draw_status_line(i)
             self.stream.write("\n")
 
@@ -692,10 +693,10 @@ class ProgressBox:
             return
         if old_value != value:
             # Move the cursor up to the top of the box and draw the progress bar.
-            self.stream.write(ANSI.Cursor.UP(4) + ANSI.Cursor.HOME)
+            self.stream.write(ANSI.Cursor.UP(self._line_count + 1) + ANSI.Cursor.HOME)
             self.draw_progress_bar()
             # Move the cursor back down to the bottom of the box.
-            self.stream.write(ANSI.Cursor.DOWN(4))
+            self.stream.write(ANSI.Cursor.DOWN(self._line_count + 1))
             self.stream.flush()
 
     def add_task_status(self, status: str):
@@ -703,18 +704,18 @@ class ProgressBox:
         if not self.stream:
             return
         # Move the cursor up to the top of the box and draw the progress bar.
-        self.stream.write(ANSI.Cursor.UP(4) + ANSI.Cursor.HOME)
+        self.stream.write(ANSI.Cursor.UP(self._line_count + 1) + ANSI.Cursor.HOME)
         self.draw_progress_bar()
         # Move the cursor back down to the bottom of the box.
-        self.stream.write(ANSI.Cursor.DOWN(4))
+        self.stream.write(ANSI.Cursor.DOWN(self._line_count + 1))
         self.stream.flush()
 
     def clear(self):
         if not self.stream:
             return
-        # Clear the current line and move the cursor up. Do this 5 times to
-        # clear the entire box (3 lines of text + top and bottom borders).
-        for _ in range(4):
+        # Clear the current line and move the cursor up. Do this for each line,
+        # plus once for the top and bottom borders.
+        for _ in range(self._line_count + 1):
             self.stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.UP())
         # Clear the final line and reset the cursor to the start of the line.
         self.stream.write(ANSI.Cursor.CLEAR_LINE + ANSI.Cursor.HOME)
@@ -738,12 +739,11 @@ class ProgressBox:
         text = f"{left_text}{' ' * padding}{right_text}"
 
         # Move cursor to the line inside the box and write the text.
-        # For line 0, we want to move up 3 lines (to the first empty line in the box).
-        # For line 1, we want to move up 2 lines.
-        # For line 2, we want to move up 1 line.
-        assert line_no >= 0 and line_no < 3, "line_no must be between 0 and 2"
+        assert line_no >= 0 and line_no < self._line_count, (
+            f"line_no must be between 0 and {self._line_count - 1}"
+        )
         self._lines[line_no] = text
-        line_offset = 3 - line_no
+        line_offset = self._line_count - line_no
         self.stream.write(ANSI.Cursor.UP(line_offset) + ANSI.Cursor.HOME)
         self.draw_status_line(line_no)
         # Move cursor back down to the bottom of the box.
@@ -860,7 +860,7 @@ class RobotTrace:
             shutil.get_terminal_size(fallback=(width, 40)).columns, width
         )
         self.progress_box = ProgressBox(
-            progress_stream, self.colors, self.terminal_width
+            progress_stream, 3, self.colors, self.terminal_width
         )
         self.stats = TestStatistics()
         self.timings = TestTimings()

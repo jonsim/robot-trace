@@ -345,7 +345,9 @@ class TestProgressBox(unittest.TestCase):
         from io import StringIO
 
         self.stream = StringIO()
-        self.box = ProgressBox(stream=self.stream, colors=True, width=80)
+        self.box = ProgressBox(
+            stream=self.stream, status_line_count=3, colors=True, width=80
+        )
 
     def test_draw(self):
         self.box.draw()
@@ -381,7 +383,9 @@ class TestProgressBox(unittest.TestCase):
         self.assertIn(expected_bar, output)
 
     def test_progress_bar_narrow_terminal(self):
-        box_narrow = ProgressBox(stream=self.stream, colors=False, width=39)
+        box_narrow = ProgressBox(
+            stream=self.stream, status_line_count=3, colors=False, width=39
+        )
         self.stream.truncate(0)
         self.stream.seek(0)
         box_narrow.total_tasks = 10
@@ -431,7 +435,7 @@ class TestProgressBox(unittest.TestCase):
         self.assertIn(ANSI.Cursor.CLEAR_LINE, self.stream.getvalue())
 
     def test_none_stream(self):
-        box_none = ProgressBox(None, 80)
+        box_none = ProgressBox(None, 1, 80)
         box_none.draw()
         box_none.write_line(0, "left")
         box_none.clear()
