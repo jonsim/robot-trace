@@ -823,8 +823,6 @@ class RobotTraceArgs:
         if console_progress == "AUTO":
             if sys.stdout.isatty():
                 self.progress_stream = sys.stdout
-            elif sys.stderr.isatty():
-                self.progress_stream = sys.stderr
             else:
                 self.progress_stream = None
         elif console_progress == "STDOUT":
@@ -843,9 +841,7 @@ class RobotTraceArgs:
         self.print_failed = self.verbosity >= Verbosity.QUIET
 
         # Configure terminal width.
-        self.terminal_width = min(
-            shutil.get_terminal_size(fallback=(width, 40)).columns, width
-        )
+        self.width = min(shutil.get_terminal_size(fallback=(width, 40)).columns, width)
 
 
 class InterceptStream:
@@ -921,7 +917,7 @@ class RobotTrace:
         )
 
         self.progress_box = ProgressBox(
-            self.args.progress_stream, 3, self.args.colors, self.args.terminal_width
+            self.args.progress_stream, 3, self.args.colors, self.args.width
         )
         self.stats = TestStatistics()
         self.timings = TestTimings()
@@ -933,7 +929,7 @@ class RobotTrace:
                 print_errored=self.args.print_errored,
                 print_failed=self.args.print_failed,
                 colors=self.args.colors,
-                width=self.args.terminal_width,
+                width=self.args.width,
                 print_callback=self._print_trace,
             )
         else:
@@ -944,7 +940,7 @@ class RobotTrace:
                 print_errored=self.args.print_errored,
                 print_failed=self.args.print_failed,
                 colors=self.args.colors,
-                width=self.args.terminal_width,
+                width=self.args.width,
                 print_callback=self._print_trace,
             )
 

@@ -25,7 +25,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-import sys
 import threading
 import time
 from socketserver import ThreadingMixIn
@@ -227,8 +226,8 @@ class StreamedTracePrinter:
 
 
 class PabotTraceCollector:
-    def __init__(self, process_count: int, progress_box: ProgressBox):
-        self.stream = sys.stdout
+    def __init__(self, stream, process_count: int, progress_box: ProgressBox):
+        self.stream = stream
         self.process_count = process_count
         self.progress_box = progress_box
         self.verbosity = Verbosity.NORMAL

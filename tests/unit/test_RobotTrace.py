@@ -395,16 +395,7 @@ class TestRobotTraceArgs(unittest.TestCase):
         self.assertIs(args.progress_stream, sys.stdout)
 
     @patch("sys.stdout.isatty", return_value=False)
-    @patch("sys.stderr.isatty", return_value=True)
-    def test_console_progress_auto_stderr_tty(self, _mock_err, _mock_out):
-        import sys
-
-        args = self._make(console_progress="AUTO")
-        self.assertIs(args.progress_stream, sys.stderr)
-
-    @patch("sys.stdout.isatty", return_value=False)
-    @patch("sys.stderr.isatty", return_value=False)
-    def test_console_progress_auto_no_tty(self, _mock_err, _mock_out):
+    def test_console_progress_auto_no_tty(self, _mock_out):
         args = self._make(console_progress="AUTO")
         self.assertIsNone(args.progress_stream)
 
@@ -448,23 +439,23 @@ class TestRobotTraceArgs(unittest.TestCase):
         args = self._make(verbosity="NORMAL", can_stream_output=True)
         self.assertFalse(args.live_output)
 
-    # --- terminal_width ---
+    # --- width ---
 
     @patch(
         "shutil.get_terminal_size",
         return_value=__import__("os").terminal_size((200, 40)),
     )
-    def test_terminal_width_capped_by_width_arg(self, _):
+    def test_width_capped_by_width_arg(self, _):
         args = self._make(width=100)
-        self.assertEqual(args.terminal_width, 100)
+        self.assertEqual(args.width, 100)
 
     @patch(
         "shutil.get_terminal_size",
         return_value=__import__("os").terminal_size((60, 40)),
     )
-    def test_terminal_width_uses_terminal_when_smaller(self, _):
+    def test_width_uses_terminal_when_smaller(self, _):
         args = self._make(width=120)
-        self.assertEqual(args.terminal_width, 60)
+        self.assertEqual(args.width, 60)
 
 
 class TestInterceptStream(unittest.TestCase):
