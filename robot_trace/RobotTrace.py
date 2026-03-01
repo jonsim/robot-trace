@@ -220,6 +220,27 @@ class TracePrinter:
         self.width = width
         self.print = print_callback
 
+    def start_suite(self, name, attributes):
+        raise NotImplementedError("start_suite not implemented")
+
+    def end_suite(self, name, attributes):
+        raise NotImplementedError("end_suite not implemented")
+
+    def start_test(self, name, attributes):
+        raise NotImplementedError("start_test not implemented")
+
+    def end_test(self, name, attributes):
+        raise NotImplementedError("end_test not implemented")
+
+    def start_keyword(self, in_test: bool, name, attributes):
+        raise NotImplementedError("start_keyword not implemented")
+
+    def end_keyword(self, in_test: bool, name, attributes):
+        raise NotImplementedError("end_keyword not implemented")
+
+    def log_message(self, in_test: bool, attributes):
+        raise NotImplementedError("log_message not implemented")
+
     def log_message_to_console(
         self, in_test: bool, message: str, stream: Literal["stdout", "stderr"]
     ):
@@ -754,6 +775,72 @@ class ProgressBox:
         self.stream.flush()
 
 
+class RobotTraceArgs:
+    def __init__(
+        self,
+        verbosity: str,
+        colors: str,
+        console_progress: str,
+        trace_subprocesses: bool,
+        width: int,
+        can_stream_output: bool,
+    ):
+        # Parse verbosity argument.
+        verbosity = verbosity.upper()
+        self.verbosity = Verbosity.from_string(verbosity)
+
+        # Parse colors argument.
+        colors = colors.upper()
+        if colors in {"ON", "ANSI"}:
+            self.colors = True
+        elif colors in {"OFF"}:
+            self.colors = False
+        else:  # Assume AUTO.
+            if sys.stdout.isatty():
+                if sys.platform == "win32":
+                    import importlib.util
+
+                    self.colors = importlib.util.find_spec("colorama") is not None
+                else:
+                    self.colors = True
+            else:
+                self.colors = False
+        # On Windows, import colorama if we're coloring output.
+        if self.colors and sys.platform == "win32":
+            import colorama
+
+            colorama.just_fix_windows_console()
+
+        # Parse console_progress argument.
+        console_progress = console_progress.upper()
+        if console_progress == "AUTO":
+            if sys.stdout.isatty():
+                self.progress_stream = sys.stdout
+            elif sys.stderr.isatty():
+                self.progress_stream = sys.stderr
+            else:
+                self.progress_stream = None
+        elif console_progress == "STDOUT":
+            self.progress_stream = sys.stdout
+        elif console_progress == "STDERR":
+            self.progress_stream = sys.stderr
+        else:  # Assume NONE.
+            self.progress_stream = None
+
+        # Configure output based on verbosity.
+        self.live_output = self.verbosity >= Verbosity.DEBUG and can_stream_output
+        self.print_passed = self.verbosity >= Verbosity.DEBUG
+        self.print_skipped = self.verbosity >= Verbosity.DEBUG
+        self.print_warned = self.verbosity >= Verbosity.NORMAL
+        self.print_errored = self.verbosity >= Verbosity.NORMAL
+        self.print_failed = self.verbosity >= Verbosity.QUIET
+
+        # Configure terminal width.
+        self.terminal_width = min(
+            shutil.get_terminal_size(fallback=(width, 40)).columns, width
+        )
+
+
 class InterceptStream:
     def __init__(self, real_stream, write_callback):
         self._real_stream = real_stream
@@ -816,86 +903,43 @@ class RobotTrace:
         width: int = 120,
         can_stream_output: bool = True,
     ):
-        # Parse verbosity argument.
-        verbosity = verbosity.upper()
-        self.verbosity = Verbosity.from_string(verbosity)
-        # Parse colors argument.
-        colors = colors.upper()
-        if colors in {"ON", "ANSI"}:
-            self.colors = True
-        elif colors in {"OFF"}:
-            self.colors = False
-        else:  # Assume AUTO.
-            if sys.stdout.isatty():
-                if sys.platform == "win32":
-                    import importlib.util
-
-                    self.colors = importlib.util.find_spec("colorama") is not None
-                else:
-                    self.colors = True
-            else:
-                self.colors = False
-        # Parse console_progress argument.
-        console_progress = console_progress.upper()
-        if console_progress == "AUTO":
-            if sys.stdout.isatty():
-                progress_stream = sys.stdout
-            elif sys.stderr.isatty():
-                progress_stream = sys.stderr
-            else:
-                progress_stream = None
-        elif console_progress == "STDOUT":
-            progress_stream = sys.stdout
-        elif console_progress == "STDERR":
-            progress_stream = sys.stderr
-        else:  # Assume NONE.
-            progress_stream = None
-
-        # Configure output based on verbosity.
-        self.live_output = self.verbosity >= Verbosity.DEBUG and can_stream_output
-        self.print_passed = self.verbosity >= Verbosity.DEBUG
-        self.print_skipped = self.verbosity >= Verbosity.DEBUG
-        self.print_warned = self.verbosity >= Verbosity.NORMAL
-        self.print_errored = self.verbosity >= Verbosity.NORMAL
-        self.print_failed = self.verbosity >= Verbosity.QUIET
-
-        # Set properties.
-        self.terminal_width = min(
-            shutil.get_terminal_size(fallback=(width, 40)).columns, width
+        # Parse arguments.
+        self.args = RobotTraceArgs(
+            verbosity=verbosity,
+            colors=colors,
+            console_progress=console_progress,
+            trace_subprocesses=trace_subprocesses,
+            width=width,
+            can_stream_output=can_stream_output,
         )
+
         self.progress_box = ProgressBox(
-            progress_stream, 3, self.colors, self.terminal_width
+            self.args.progress_stream, 3, self.args.colors, self.args.terminal_width
         )
         self.stats = TestStatistics()
         self.timings = TestTimings()
-        if self.live_output:
-            self.result_printer = LiveTracePrinter(
-                print_passed=self.print_passed,
-                print_skipped=self.print_skipped,
-                print_warned=self.print_warned,
-                print_errored=self.print_errored,
-                print_failed=self.print_failed,
-                colors=self.colors,
-                width=self.terminal_width,
+        if self.args.live_output:
+            self.result_printer: TracePrinter = LiveTracePrinter(
+                print_passed=self.args.print_passed,
+                print_skipped=self.args.print_skipped,
+                print_warned=self.args.print_warned,
+                print_errored=self.args.print_errored,
+                print_failed=self.args.print_failed,
+                colors=self.args.colors,
+                width=self.args.terminal_width,
                 print_callback=self._print_trace,
             )
         else:
-            self.result_printer = BufferedTracePrinter(
-                print_passed=self.print_passed,
-                print_skipped=self.print_skipped,
-                print_warned=self.print_warned,
-                print_errored=self.print_errored,
-                print_failed=self.print_failed,
-                colors=self.colors,
-                width=self.terminal_width,
+            self.result_printer: TracePrinter = BufferedTracePrinter(
+                print_passed=self.args.print_passed,
+                print_skipped=self.args.print_skipped,
+                print_warned=self.args.print_warned,
+                print_errored=self.args.print_errored,
+                print_failed=self.args.print_failed,
+                colors=self.args.colors,
+                width=self.args.terminal_width,
                 print_callback=self._print_trace,
             )
-
-        # On Windows, import colorama if we're coloring output.
-        if self.colors and sys.platform == "win32":
-            import colorama
-
-            colorama.just_fix_windows_console()
 
         if trace_subprocesses:
             subprocess.Popen = PopenWrapper(
@@ -1031,16 +1075,16 @@ class RobotTrace:
     def close(self):
         self.progress_box.clear()
 
-        if self.verbosity >= Verbosity.QUIET:
+        if self.args.verbosity >= Verbosity.QUIET:
             self._writeln("RUN COMPLETE: " + self.stats.format_run_summary())
-        if self.verbosity >= Verbosity.NORMAL:
+        if self.args.verbosity >= Verbosity.NORMAL:
             run_results = self.stats.format_run_results()
             if run_results:
                 self._writeln("\n" + run_results)
 
         if (
             self.timings.run_start_time is not None
-            and self.verbosity >= Verbosity.NORMAL
+            and self.args.verbosity >= Verbosity.NORMAL
         ):
             elapsed_str = self.timings.format_elapsed_time()
             self._writeln(f"Total elapsed: {elapsed_str}.")

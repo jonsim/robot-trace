@@ -7,6 +7,7 @@ from robot_trace.RobotTrace import (
     InterceptStream,
     ProgressBox,
     RobotTrace,
+    RobotTraceArgs,
     TestStatistics,
     TestTimings,
     TraceStack,
@@ -197,14 +198,14 @@ class TestRobotTraceHelper(RobotTraceTestBase):
 
     def test_verbosity_settings_debug(self):
         listener = RobotTrace(verbosity="DEBUG", console_progress="NONE")
-        self.assertTrue(listener.print_passed)
-        self.assertTrue(listener.print_skipped)
-        self.assertTrue(listener.print_failed)
+        self.assertTrue(listener.args.print_passed)
+        self.assertTrue(listener.args.print_skipped)
+        self.assertTrue(listener.args.print_failed)
 
     def test_verbosity_settings_quiet(self):
         listener_quiet = RobotTrace(verbosity="QUIET", console_progress="NONE")
-        self.assertFalse(listener_quiet.print_passed)
-        self.assertTrue(listener_quiet.print_failed)
+        self.assertFalse(listener_quiet.args.print_passed)
+        self.assertTrue(listener_quiet.args.print_failed)
 
 
 class TestStatisticsFormatReturns(unittest.TestCase):
@@ -281,20 +282,20 @@ class TestRobotTraceInitialization(RobotTraceTestBase):
     @patch("sys.stdout.isatty", return_value=True)
     def test_colors_auto_tty(self, mock_isatty):
         listener = RobotTrace(colors="AUTO", console_progress="NONE")
-        self.assertTrue(listener.colors)
+        self.assertTrue(listener.args.colors)
 
     @patch("sys.stdout.isatty", return_value=False)
     def test_colors_auto_no_tty(self, mock_isatty):
         listener = RobotTrace(colors="AUTO", console_progress="NONE")
-        self.assertFalse(listener.colors)
+        self.assertFalse(listener.args.colors)
 
     def test_colors_on(self):
         listener = RobotTrace(colors="ON", console_progress="NONE")
-        self.assertTrue(listener.colors)
+        self.assertTrue(listener.args.colors)
 
     def test_colors_off(self):
         listener = RobotTrace(colors="OFF", console_progress="NONE")
-        self.assertFalse(listener.colors)
+        self.assertFalse(listener.args.colors)
 
     @patch("sys.stdout", new_callable=StringIO)
     def test_console_progress_stdout(self, mock_stdout):
@@ -309,6 +310,161 @@ class TestRobotTraceInitialization(RobotTraceTestBase):
         import sys
 
         self.assertEqual(listener.progress_box.stream, sys.stderr)
+
+
+class TestRobotTraceArgs(unittest.TestCase):
+    """Tests for the RobotTraceArgs argument-parsing class."""
+
+    def _make(self, **kwargs):
+        defaults = dict(
+            verbosity="NORMAL",
+            colors="OFF",
+            console_progress="NONE",
+            trace_subprocesses=False,
+            width=120,
+            can_stream_output=True,
+        )
+        defaults.update(kwargs)
+        return RobotTraceArgs(**defaults)
+
+    # --- verbosity ---
+
+    def test_verbosity_quiet(self):
+        args = self._make(verbosity="quiet")
+        self.assertEqual(args.verbosity, Verbosity.QUIET)
+
+    def test_verbosity_normal(self):
+        args = self._make(verbosity="NORMAL")
+        self.assertEqual(args.verbosity, Verbosity.NORMAL)
+
+    def test_verbosity_debug(self):
+        args = self._make(verbosity="debug")
+        self.assertEqual(args.verbosity, Verbosity.DEBUG)
+
+    def test_verbosity_invalid_falls_back_to_normal(self):
+        args = self._make(verbosity="bogus")
+        self.assertEqual(args.verbosity, Verbosity.NORMAL)
+
+    # --- colors ---
+
+    def test_colors_on(self):
+        args = self._make(colors="ON")
+        self.assertTrue(args.colors)
+
+    def test_colors_ansi(self):
+        args = self._make(colors="ANSI")
+        self.assertTrue(args.colors)
+
+    def test_colors_off(self):
+        args = self._make(colors="off")
+        self.assertFalse(args.colors)
+
+    @patch("sys.stdout.isatty", return_value=True)
+    def test_colors_auto_tty(self, _):
+        args = self._make(colors="AUTO")
+        self.assertTrue(args.colors)
+
+    @patch("sys.stdout.isatty", return_value=False)
+    def test_colors_auto_no_tty(self, _):
+        args = self._make(colors="AUTO")
+        self.assertFalse(args.colors)
+
+    # --- console_progress / progress_stream ---
+
+    def test_console_progress_none(self):
+        args = self._make(console_progress="NONE")
+        self.assertIsNone(args.progress_stream)
+
+    def test_console_progress_stdout(self):
+        import sys
+
+        args = self._make(console_progress="STDOUT")
+        self.assertIs(args.progress_stream, sys.stdout)
+
+    def test_console_progress_stderr(self):
+        import sys
+
+        args = self._make(console_progress="STDERR")
+        self.assertIs(args.progress_stream, sys.stderr)
+
+    @patch("sys.stdout.isatty", return_value=True)
+    def test_console_progress_auto_stdout_tty(self, _):
+        import sys
+
+        args = self._make(console_progress="AUTO")
+        self.assertIs(args.progress_stream, sys.stdout)
+
+    @patch("sys.stdout.isatty", return_value=False)
+    @patch("sys.stderr.isatty", return_value=True)
+    def test_console_progress_auto_stderr_tty(self, _mock_err, _mock_out):
+        import sys
+
+        args = self._make(console_progress="AUTO")
+        self.assertIs(args.progress_stream, sys.stderr)
+
+    @patch("sys.stdout.isatty", return_value=False)
+    @patch("sys.stderr.isatty", return_value=False)
+    def test_console_progress_auto_no_tty(self, _mock_err, _mock_out):
+        args = self._make(console_progress="AUTO")
+        self.assertIsNone(args.progress_stream)
+
+    # --- print_* flags derived from verbosity ---
+
+    def test_quiet_print_flags(self):
+        args = self._make(verbosity="QUIET")
+        self.assertFalse(args.print_passed)
+        self.assertFalse(args.print_skipped)
+        self.assertFalse(args.print_warned)
+        self.assertFalse(args.print_errored)
+        self.assertTrue(args.print_failed)
+
+    def test_normal_print_flags(self):
+        args = self._make(verbosity="NORMAL")
+        self.assertFalse(args.print_passed)
+        self.assertFalse(args.print_skipped)
+        self.assertTrue(args.print_warned)
+        self.assertTrue(args.print_errored)
+        self.assertTrue(args.print_failed)
+
+    def test_debug_print_flags(self):
+        args = self._make(verbosity="DEBUG")
+        self.assertTrue(args.print_passed)
+        self.assertTrue(args.print_skipped)
+        self.assertTrue(args.print_warned)
+        self.assertTrue(args.print_errored)
+        self.assertTrue(args.print_failed)
+
+    # --- live_output ---
+
+    def test_live_output_debug_can_stream(self):
+        args = self._make(verbosity="DEBUG", can_stream_output=True)
+        self.assertTrue(args.live_output)
+
+    def test_live_output_debug_cannot_stream(self):
+        args = self._make(verbosity="DEBUG", can_stream_output=False)
+        self.assertFalse(args.live_output)
+
+    def test_live_output_normal(self):
+        args = self._make(verbosity="NORMAL", can_stream_output=True)
+        self.assertFalse(args.live_output)
+
+    # --- terminal_width ---
+
+    @patch(
+        "shutil.get_terminal_size",
+        return_value=__import__("os").terminal_size((200, 40)),
+    )
+    def test_terminal_width_capped_by_width_arg(self, _):
+        args = self._make(width=100)
+        self.assertEqual(args.terminal_width, 100)
+
+    @patch(
+        "shutil.get_terminal_size",
+        return_value=__import__("os").terminal_size((60, 40)),
+    )
+    def test_terminal_width_uses_terminal_when_smaller(self, _):
+        args = self._make(width=120)
+        self.assertEqual(args.terminal_width, 60)
 
 
 class TestInterceptStream(unittest.TestCase):
