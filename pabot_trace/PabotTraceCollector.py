@@ -30,7 +30,13 @@ import time
 from socketserver import ThreadingMixIn
 from xmlrpc.server import SimpleXMLRPCServer
 
-from robot_trace.RobotTrace import ProgressBox, TestStatistics, TestTimings, Verbosity
+from robot_trace.RobotTrace import (
+    ANSI,
+    ProgressBox,
+    TestStatistics,
+    TestTimings,
+    Verbosity,
+)
 
 HOST = "127.0.0.1"
 PORT = 0
@@ -118,24 +124,36 @@ class ThreadedTestStatistics(TestStatistics):
 
 
 class ExecutorProgressBox(ProgressBox):
-    def __init__(self, stream, executors: int, colors: bool, width: int = 120):
-        super().__init__(stream, (executors + 1) // 2, colors, width)
-        self._executors = executors
-        self._executor_statuses: list[str] = [""] * executors
+    def __init__(self, stream, colors: bool, width: int = 120):
+        super().__init__(stream, 0, colors, width)
+        self._executor_statuses: list[str] = []
         left_width = (self.width - 3) // 2
         right_width = self.width - 3 - left_width
         self._top_border = "┌" + "─" * left_width + "┬" + "─" * right_width + "┐"
         self._bottom_border = "└" + "─" * left_width + "┴" + "─" * right_width + "┘"
-        for i in range(len(self._lines)):
-            self._lines[i] = " " * (left_width - 1) + "│" + " " * (right_width - 1)
+        self._blank_line = " " * (left_width - 1) + "│" + " " * (right_width - 1)
 
     def write_executor_status(self, executor_no: int, status: str = ""):
-        assert executor_no < len(self._executor_statuses), (
-            f"{executor_no} must be less than {len(self._executor_statuses)}"
-        )
-        self._executor_statuses[executor_no] = status
         if not self.stream:
             return
+        # If we haven't seen this executor before, extend the list to the
+        # required size.
+        if executor_no >= len(self._executor_statuses):
+            old_height = self._line_count + 2
+            self._executor_statuses.extend(
+                ["" for _ in range(executor_no - len(self._executor_statuses) + 1)]
+            )
+            # Correspondingly increase the number of status lines.
+            required_lines = (executor_no // 2) + 1
+            if required_lines > len(self._lines):
+                self._lines.extend(
+                    [self._blank_line for _ in range(required_lines - len(self._lines))]
+                )
+                self._line_count = len(self._lines)
+                # Redraw
+                self.stream.write(ANSI.Cursor.UP(old_height - 1) + ANSI.Cursor.HOME)
+                self.draw()
+        self._executor_statuses[executor_no] = status
         # Update the correct status line
         status_lineno = executor_no // 2
         side_width = (self.width - 7) // 2
@@ -148,7 +166,7 @@ class ExecutorProgressBox(ProgressBox):
         left = self._executor_statuses[left_executor]
         right = (
             self._executor_statuses[right_executor]
-            if right_executor < self._executors
+            if right_executor < len(self._executor_statuses)
             else ""
         )
         status_text = (
@@ -170,9 +188,10 @@ class StreamedTracePrinter:
         self.print = print_callback
 
     def _format_executor_id(self, pool_id: int, queue_id: int) -> str:
-        if self.progress_box._executors < 10:
+        executor_count = len(self.progress_box._executor_statuses)
+        if executor_count < 10:
             return f"[{pool_id:1}][{queue_id:2}]"
-        elif self.progress_box._executors < 100:
+        elif executor_count < 100:
             return f"[{pool_id:2}][{queue_id:2}]"
         else:
             return f"[{pool_id:3}][{queue_id:3}]"

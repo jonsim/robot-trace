@@ -170,34 +170,37 @@ class TestExecutorProgressBoxInit(unittest.TestCase):
         self.stream = StringIO()
 
     def test_two_executors_creates_one_status_line(self):
-        box = ExecutorProgressBox(self.stream, executors=2, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
+        box.write_executor_status(1, "running")
         self.assertEqual(len(box._lines), 1)
 
     def test_three_executors_creates_two_status_lines(self):
-        box = ExecutorProgressBox(self.stream, executors=3, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
+        box.write_executor_status(2, "running")
         self.assertEqual(len(box._lines), 2)
 
     def test_four_executors_creates_two_status_lines(self):
-        box = ExecutorProgressBox(self.stream, executors=4, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
+        box.write_executor_status(3, "running")
         self.assertEqual(len(box._lines), 2)
 
     def test_top_border_contains_middle_divider(self):
-        box = ExecutorProgressBox(self.stream, executors=2, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
         self.assertIn("┬", box._top_border)
 
     def test_bottom_border_contains_middle_divider(self):
-        box = ExecutorProgressBox(self.stream, executors=2, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
         self.assertIn("┴", box._bottom_border)
 
-    def test_executor_statuses_initialized_empty(self):
-        box = ExecutorProgressBox(self.stream, executors=4, colors=False, width=80)
-        self.assertEqual(box._executor_statuses, ["", "", "", ""])
+    def test_executor_statuses_initially_empty(self):
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
+        self.assertEqual(box._executor_statuses, [])
 
 
 class TestExecutorProgressBoxWriteStatus(unittest.TestCase):
     def setUp(self):
         self.stream = StringIO()
-        self.box = ExecutorProgressBox(self.stream, executors=4, colors=False, width=80)
+        self.box = ExecutorProgressBox(self.stream, colors=False, width=80)
 
     def test_write_status_updates_internal_state(self):
         self.box.write_executor_status(0, "running")
@@ -215,12 +218,8 @@ class TestExecutorProgressBoxWriteStatus(unittest.TestCase):
         output = self.stream.getvalue()
         self.assertIn("running test", output)
 
-    def test_write_status_out_of_range_raises(self):
-        with self.assertRaises(AssertionError):
-            self.box.write_executor_status(4, "x")
-
     def test_write_status_none_stream_does_not_raise(self):
-        box = ExecutorProgressBox(None, executors=2, colors=False, width=80)
+        box = ExecutorProgressBox(None, colors=False, width=80)
         box.write_executor_status(0, "status")  # should not raise
 
     def test_write_right_executor_formatted_on_same_line_as_left(self):
@@ -235,7 +234,7 @@ class TestExecutorProgressBoxWriteStatus(unittest.TestCase):
         self.assertIn("│", output)
 
     def test_odd_executor_shows_empty_right_side_for_last_solo(self):
-        box = ExecutorProgressBox(self.stream, executors=3, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
         self.stream.truncate(0)
         self.stream.seek(0)
         box.write_executor_status(2, "SOLO")
@@ -248,20 +247,24 @@ class TestExecutorProgressBoxFormatId(unittest.TestCase):
         self.stream = StringIO()
 
     def test_format_id_less_than_10_short(self):
-        box = ExecutorProgressBox(self.stream, executors=4, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
+        # Populate statuses to set the executor count
+        box.write_executor_status(3, "running")
         # Access via StreamedTracePrinter since format_executor_id lives there
         printer = StreamedTracePrinter(box, ThreadedTestStatistics(), lambda x: None)
         result = printer._format_executor_id(1, 2)
         self.assertEqual(result, "[1][ 2]")
 
     def test_format_id_10_to_99_medium(self):
-        box = ExecutorProgressBox(self.stream, executors=50, colors=False, width=80)
+        box = ExecutorProgressBox(self.stream, colors=False, width=80)
+        box.write_executor_status(49, "running")
         printer = StreamedTracePrinter(box, ThreadedTestStatistics(), lambda x: None)
         result = printer._format_executor_id(10, 5)
         self.assertEqual(result, "[10][ 5]")
 
     def test_format_id_100_plus_long(self):
-        box = ExecutorProgressBox(self.stream, executors=150, colors=False, width=160)
+        box = ExecutorProgressBox(self.stream, colors=False, width=160)
+        box.write_executor_status(149, "running")
         printer = StreamedTracePrinter(box, ThreadedTestStatistics(), lambda x: None)
         result = printer._format_executor_id(100, 5)
         self.assertEqual(result, "[100][  5]")
@@ -275,9 +278,7 @@ class TestExecutorProgressBoxFormatId(unittest.TestCase):
 class TestStreamedTracePrinterBase(unittest.TestCase):
     def setUp(self):
         self.stream = StringIO()
-        self.progress_box = ExecutorProgressBox(
-            self.stream, executors=2, colors=False, width=80
-        )
+        self.progress_box = ExecutorProgressBox(self.stream, colors=False, width=80)
         self.stats = ThreadedTestStatistics()
         self.printed = []
         self.printer = StreamedTracePrinter(

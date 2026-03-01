@@ -90,7 +90,6 @@ def main():
     # Create the reporting mechanism.
     progress_box = ExecutorProgressBox(
         tl_args.progress_stream,
-        processes,
         tl_args.colors,
         tl_args.width,
     )
