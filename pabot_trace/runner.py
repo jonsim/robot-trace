@@ -39,23 +39,33 @@ def main():
     # Parse arguments for the runner wrapper.
     args = RobotTraceRunnerArgs(sys.argv[1:])
 
-    # Build the command to run robot.
-    listener = "pabot_trace"
-    listener_kwargs = {}
+    # Pabot doesn't have the concept of a 'top level listener', so we implement
+    # our own equivalent in this wrapper.
+    # First, build the arguments for this, top-level runner. This will include
+    # resolving auto/default arguments (which may depend on whether or not this
+    # is connected to a terminal, for example). It's important to resolve these
+    # here, rather than passing them down, because all sub-processes won't be
+    # connected to a terminal (but their output _will_ be piped to one, via this
+    # top-level runner).
+    tl_kwargs = {}
     if args.verbosity is not None:
-        listener += f":verbosity={args.verbosity}"
-        listener_kwargs["verbosity"] = str(args.verbosity)
+        tl_kwargs["verbosity"] = str(args.verbosity)
     if args.console_colors is not None:
-        listener += f":colors={args.console_colors}"
-        listener_kwargs["colors"] = str(args.console_colors)
+        tl_kwargs["colors"] = str(args.console_colors)
     if args.console_progress is not None:
-        listener_kwargs["console_progress"] = str(args.console_progress)
+        tl_kwargs["console_progress"] = str(args.console_progress)
     if args.trace_subprocesses:
-        listener += ":trace_subprocesses=True"
-        listener_kwargs["trace_subprocesses"] = True
+        tl_kwargs["trace_subprocesses"] = True
     if args.console_width is not None:
-        listener += f":width={args.console_width}"
-        listener_kwargs["width"] = int(args.console_width)
+        tl_kwargs["width"] = int(args.console_width)
+    tl_args = RobotTraceArgs(**tl_kwargs)
+
+    # Now build the listener's argument list based on the top-level args.
+    listener = "pabot_trace"
+    listener += f":verbosity={tl_args.verbosity}"
+    listener += f":colors={'ON' if tl_args.colors else 'OFF'}"
+    listener += f":trace_subprocesses={tl_args.trace_subprocesses}"
+    listener += f":width={tl_args.width}"
     cmd = [
         "pabot",
         "--pabotprerunmodifier",
@@ -79,17 +89,12 @@ def main():
 
         processes = max(2, multiprocessing.cpu_count())
 
-    # Pabot doesn't have the concept of a 'top level listener', so we implement
-    # our own equivalent in this wrapper. Parse the arguments to determine the
-    # console colors and width.
-    listener_args = RobotTraceArgs(**listener_kwargs)
-
     # Create the reporting mechanism.
     progress_box = ExecutorProgressBox(
-        listener_args.progress_stream,
+        tl_args.progress_stream,
         processes,
-        listener_args.colors,
-        listener_args.width,
+        tl_args.colors,
+        tl_args.width,
     )
 
     # Start the collector server.

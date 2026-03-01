@@ -41,6 +41,9 @@ class Verbosity(enum.Enum):
     NORMAL = 1
     DEBUG = 2
 
+    def __str__(self):
+        return self.name
+
     def __eq__(self, value):
         if isinstance(value, Verbosity):
             return self.value == value.value
@@ -832,6 +835,12 @@ class RobotTraceArgs:
         else:  # Assume NONE.
             self.progress_stream = None
 
+        # Parse trace_subprocesses argument.
+        self.trace_subprocesses = trace_subprocesses
+
+        # Configure terminal width.
+        self.width = min(shutil.get_terminal_size(fallback=(width, 40)).columns, width)
+
         # Configure output based on verbosity.
         self.live_output = self.verbosity >= Verbosity.DEBUG and can_stream_output
         self.print_passed = self.verbosity >= Verbosity.DEBUG
@@ -839,9 +848,6 @@ class RobotTraceArgs:
         self.print_warned = self.verbosity >= Verbosity.NORMAL
         self.print_errored = self.verbosity >= Verbosity.NORMAL
         self.print_failed = self.verbosity >= Verbosity.QUIET
-
-        # Configure terminal width.
-        self.width = min(shutil.get_terminal_size(fallback=(width, 40)).columns, width)
 
 
 class InterceptStream:
@@ -944,7 +950,7 @@ class RobotTrace:
                 print_callback=self._print_trace,
             )
 
-        if trace_subprocesses:
+        if self.args.trace_subprocesses:
             subprocess.Popen = PopenWrapper(
                 subprocess.Popen,
                 lambda msg: self.log_message(
