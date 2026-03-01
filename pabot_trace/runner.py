@@ -95,7 +95,11 @@ def main():
     try:
         with PabotTraceCollector(sys.stdout, processes, progress_box) as collector:
             result = subprocess.run(cmd, capture_output=True)
-            if result.returncode > 250:
+            # Pabot returns 253 if you pass useful arguments like `--no-rebot`,
+            # so basically ignore the 253 return code. Sadly this return code
+            # also overrides everything else, meaning you lose a programmatic
+            # way of telling if the tests failed.
+            if result.returncode != 253 and result.returncode > 250:
                 collector.print_summary = False
         # If the process failed because of an internal error (likely when
         # parsing arguments or in the listener itself), print the error message.

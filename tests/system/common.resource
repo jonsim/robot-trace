@@ -34,3 +34,24 @@ Set Robot Version
     Set Suite Variable    ${ROBOT_VERSION}    ${version}
     Set Suite Variable    ${ROBOT_VERSION_MAJOR}    ${major}
     Set Suite Variable    ${ROBOT_VERSION_MINOR}    ${minor}
+
+Normalize Output
+    [Documentation]    Replaces non-deterministic parts of the output (like elapsed times)
+    ...    with a fixed placeholder to make the output comparison robust.
+    [Arguments]    ${output}
+    # Normalize keyword elapsed times (e.g., "  ✓ PASS     0s")
+    # We use 4 spaces to match the output format of RobotTrace.py
+    ${output} =    Replace String Using Regexp    ${output}
+    ...    (PASS|SKIP|FAIL|NOT RUN) {2,}\\d+h \\d+m \\d+s    \\1${SPACE}${SPACE}${SPACE}${SPACE}0s
+    ${output} =    Replace String Using Regexp    ${output}
+    ...    (PASS|SKIP|FAIL|NOT RUN) {2,}\\d+m \\d+s    \\1${SPACE}${SPACE}${SPACE}${SPACE}0s
+    ${output} =    Replace String Using Regexp    ${output}
+    ...    (PASS|SKIP|FAIL|NOT RUN) {2,}\\d+s    \\1${SPACE}${SPACE}${SPACE}${SPACE}0s
+    # Normalize "Total elapsed:  0s."
+    ${output} =    Replace String Using Regexp    ${output}
+    ...    Total elapsed: {1,}\\d+h \\d+m \\d+s\\.    Total elapsed:${SPACE}${SPACE}0s.
+    ${output} =    Replace String Using Regexp    ${output}
+    ...    Total elapsed: {1,}\\d+m \\d+s\\.    Total elapsed:${SPACE}${SPACE}0s.
+    ${output} =    Replace String Using Regexp    ${output}
+    ...    Total elapsed: {1,}\\d+s\\.    Total elapsed:${SPACE}${SPACE}0s.
+    RETURN    ${output}

@@ -1,0 +1,16 @@
+TEST PASSED: Run Keywords Passing.Test That Calls Run Keywords
+══════════════════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the testcase')
+  I Starting the testcase
+  ✓ PASS     0s
+▶ BuiltIn.Run Keywords('Log', 'First keyword', 'AND', 'Log', 'Second keyword')
+  ▶ BuiltIn.Log('First keyword')
+    I First keyword
+    ✓ PASS     0s
+  ▶ BuiltIn.Log('Second keyword')
+    I Second keyword
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

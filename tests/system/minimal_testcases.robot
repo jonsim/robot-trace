@@ -98,6 +98,7 @@ Run Minimal Testcase
     [Documentation]    Runs one of the minimal testcases and checks that the
     ...    output matches.
     [Arguments]    ${testcase}    @{additional_args}    ${mode}=normal    ${expected_rc}=0
+    # Compute the testcase file and expected result file.
     ${testcase_file} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.robot
     ${testcase_result} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.trace.${mode}
     IF    ${ROBOT_VERSION_MAJOR} < 7
@@ -109,11 +110,15 @@ Run Minimal Testcase
         ${match} =    Evaluate    re.search(r"(\\d+)failing", "${testcase}")
         ${expected_rc} =    Set Variable    ${{$match.group(1) if $match else 1}}
     END
+    File Should Exist    ${testcase_file}
+    File Should Exist    ${testcase_result}
+
+    # Add any additional arguments.
     IF    "${mode}" == "verbose"
         Append To List    ${additional_args}    --verbose
     END
-    File Should Exist    ${testcase_file}
-    File Should Exist    ${testcase_result}
+
+    # Run robot-trace and check the output matches the expectation.
     ${res} =  Run Process Check Output
     ...    robot-trace
     ...    --output      NONE
@@ -125,4 +130,27 @@ Run Minimal Testcase
     Should Be Equal    ${EMPTY}    ${res.stderr}
     ${testcase_expectation} =    Get File    ${testcase_result}
     ${testcase_expectation} =    Strip String    ${testcase_expectation}
-    Should Be Equal    ${testcase_expectation}    ${res.stdout}
+    ${normalized_stdout} =    Normalize Output    ${res.stdout}
+    ${normalized_expectation} =    Normalize Output    ${testcase_expectation}
+    Should Be Equal    ${normalized_expectation}    ${normalized_stdout}
+
+    # Run pabot-trace and check the output matches the expectation.
+    # Pabot doesn't report live in verbose mode, so needs a different
+    # expectation when running in verbose mode.
+    IF    "${mode}" == "verbose"
+        ${testcase_result} =    Set Variable    ${testcase_result}.pabot
+    END
+    ${res} =  Run Process Check Output
+    ...    pabot-trace
+    ...    --no-pabotlib
+    ...    --no-rebot
+    ...    --outputdir    ${TEMPDIR}${/}${testcase}${/}${mode}
+    ...    @{additional_args}
+    ...    ${testcase_file}
+    ...    expected_rc=253
+    Should Be Equal    ${EMPTY}    ${res.stderr}
+    ${testcase_expectation} =    Get File    ${testcase_result}
+    ${testcase_expectation} =    Strip String    ${testcase_expectation}
+    ${normalized_stdout} =    Normalize Output    ${res.stdout}
+    ${normalized_expectation} =    Normalize Output    ${testcase_expectation}
+    Should Be Equal    ${normalized_expectation}    ${normalized_stdout}

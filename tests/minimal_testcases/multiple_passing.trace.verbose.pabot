@@ -1,0 +1,24 @@
+TEST PASSED: Multiple Passing.Passing Testcase 1
+════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the first passing testcase')
+  I Starting the first passing testcase
+  ✓ PASS     0s
+▶ BuiltIn.Should Be Equal('${True}', '${True}')
+  ✓ PASS     0s
+▶ BuiltIn.Log('First passing testcase completed')
+  I First passing testcase completed
+  ✓ PASS     0s
+
+TEST PASSED: Multiple Passing.Passing Testcase 2
+════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the second passing testcase')
+  I Starting the second passing testcase
+  ✓ PASS     0s
+▶ BuiltIn.Should Be Equal('${False}', '${False}')
+  ✓ PASS     0s
+▶ BuiltIn.Log('Second passing testcase completed')
+  I Second passing testcase completed
+  ✓ PASS     0s
+
+RUN COMPLETE: 2 tests, 2 completed (2 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

@@ -1,0 +1,27 @@
+TEST PASSED: Suite Teardown Passing.Test Case 1
+═══════════════════════════════════════════════
+▶ BuiltIn.Log('In Test Case 1')
+  I In Test Case 1
+  ✓ PASS     0s
+
+SUITE PASSED: Suite Teardown Passing
+════════════════════════════════════
+▶ TEARDOWN    Do Suite Teardown()
+  ▶ BuiltIn.Log('Doing suite teardown')
+    I Doing suite teardown
+    ✓ PASS     0s
+  ▶ BuiltIn.Evaluate('1 + 2')
+    I ${value} = 3
+    ✓ PASS     0s
+  ▶ BuiltIn.Should Be Equal As Numbers('${value}', '3')
+    I Argument types are:
+      <class 'int'>
+      <class 'str'>
+    ✓ PASS     0s
+  ▶ BuiltIn.Log('Suite teardown completed')
+    I Suite teardown completed
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.
