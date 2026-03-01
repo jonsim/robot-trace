@@ -154,6 +154,7 @@ class PabotTraceCollector:
         self.progress_box = progress_box
         self.verbosity = Verbosity.NORMAL
         self.stats = TestStatistics()
+        self.print_summary = True
         self.run_start_time = None
         self.server: ThreadedXMLRPCServer = None
         self.server_thread: threading.Thread = None
@@ -198,6 +199,7 @@ class PabotTraceCollector:
         # Run server in a background thread.
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.start()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # First, shutdown the server.
@@ -209,13 +211,13 @@ class PabotTraceCollector:
         self.progress_box.clear()
 
         # And finally print a summary of the run.
-        if self.verbosity >= Verbosity.QUIET:
-            self._writeln("RUN COMPLETE: " + self.stats.format_run_summary())
-        if self.verbosity >= Verbosity.NORMAL:
-            run_results = self.stats.format_run_results()
-            if run_results:
-                self._writeln("\n" + run_results)
-
-        if self.run_start_time is not None and self.verbosity >= Verbosity.NORMAL:
-            elapsed_str = TestTimings.format_time(time.time() - self.run_start_time)
-            self._writeln(f"Total elapsed: {elapsed_str}.")
+        if self.print_summary:
+            if self.verbosity >= Verbosity.QUIET:
+                self._writeln("RUN COMPLETE: " + self.stats.format_run_summary())
+            if self.verbosity >= Verbosity.NORMAL:
+                run_results = self.stats.format_run_results()
+                if run_results:
+                    self._writeln("\n" + run_results)
+            if self.run_start_time is not None and self.verbosity >= Verbosity.NORMAL:
+                elapsed_str = TestTimings.format_time(time.time() - self.run_start_time)
+                self._writeln(f"Total elapsed: {elapsed_str}.")

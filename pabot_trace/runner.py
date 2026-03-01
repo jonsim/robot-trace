@@ -146,10 +146,16 @@ def main():
         *pabot_args,
     ]
 
-    import pabot.arguments
+    # Determine the number of processes to use.
+    try:
+        import pabot.arguments
 
-    args, pabot_args = pabot.arguments._parse_pabot_args(cmd)
-    processes = pabot_args["processes"]
+        args, pabot_args = pabot.arguments._parse_pabot_args(cmd)
+        processes = int(pabot_args["processes"])
+    except Exception:
+        import multiprocessing
+
+        processes = max(2, multiprocessing.cpu_count())
 
     # Create the reporting mechanism.
     console_width = 120 if console_width is None else int(console_width)
@@ -164,13 +170,16 @@ def main():
     )
 
     # Start the collector server.
-    with PabotTraceCollector(processes, progress_box):
-        try:
-            result = subprocess.run(cmd, stderr=subprocess.PIPE)
-            # If the process failed because of an internal error (likely when
-            # parsing arguments or in the listener itself), print the error message.
+    try:
+        with PabotTraceCollector(processes, progress_box) as collector:
+            result = subprocess.run(cmd, capture_output=True)
             if result.returncode > 250:
-                sys.stderr.write(result.stderr.decode())
-            sys.exit(result.returncode)
-        except KeyboardInterrupt:
-            sys.exit(130)
+                collector.print_summary = False
+        # If the process failed because of an internal error (likely when
+        # parsing arguments or in the listener itself), print the error message.
+        if result.returncode > 250:
+            sys.stdout.write(result.stdout.decode())
+            sys.stderr.write(result.stderr.decode())
+        sys.exit(result.returncode)
+    except KeyboardInterrupt:
+        sys.exit(130)
