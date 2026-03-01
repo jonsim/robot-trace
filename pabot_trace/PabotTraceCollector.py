@@ -41,6 +41,83 @@ class ThreadedXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):
     pass
 
 
+class ThreadedTestStatistics(TestStatistics):
+    def __init__(self):
+        self.top_level_test_count = None
+        self._stats: dict[str, TestStatistics] = {}
+
+    def _get_suite_statistics(self, uid) -> TestStatistics:
+        if uid not in self._stats:
+            self._stats[uid] = TestStatistics()
+        return self._stats[uid]
+
+    @property
+    def started_suites(self) -> list[str]:
+        return [
+            suite for stats in self._stats.values() for suite in stats.started_suites
+        ]
+
+    @property
+    def started_tests(self) -> list[str]:
+        return [test for stats in self._stats.values() for test in stats.started_tests]
+
+    @property
+    def passed_tests(self) -> list[str]:
+        return [test for stats in self._stats.values() for test in stats.passed_tests]
+
+    @property
+    def skipped_tests(self) -> list[str]:
+        return [test for stats in self._stats.values() for test in stats.skipped_tests]
+
+    @property
+    def failed_tests(self) -> list[str]:
+        return [test for stats in self._stats.values() for test in stats.failed_tests]
+
+    @property
+    def completed_tests(self) -> list[str]:
+        return [
+            test for stats in self._stats.values() for test in stats.completed_tests
+        ]
+
+    @property
+    def completed_suites(self) -> list[str]:
+        return [
+            suite for stats in self._stats.values() for suite in stats.completed_suites
+        ]
+
+    @property
+    def warnings(self) -> dict[str, list[str]]:
+        warnings = {}
+        for stats in self._stats.values():
+            warnings.update(stats.warnings)
+        return warnings
+
+    @property
+    def errors(self) -> dict[str, list[str]]:
+        errors = {}
+        for stats in self._stats.values():
+            errors.update(stats.errors)
+        return errors
+
+    def start_suite(self, uid, name, attributes):
+        self._get_suite_statistics(uid).start_suite(name, attributes)
+
+    def end_suite(self, uid, name, attributes):
+        self._get_suite_statistics(uid).end_suite(name, attributes)
+
+    def start_test(self, uid, name, attributes):
+        self._get_suite_statistics(uid).start_test(name, attributes)
+
+    def end_test(self, uid, name, attributes):
+        self._get_suite_statistics(uid).end_test(name, attributes)
+
+    def log_warning(self, uid, message):
+        self._get_suite_statistics(uid).log_warning(message)
+
+    def log_error(self, uid, message):
+        self._get_suite_statistics(uid).log_error(message)
+
+
 class ExecutorProgressBox(ProgressBox):
     def __init__(self, stream, executors: int, colors: bool, width: int = 120):
         super().__init__(stream, (executors + 1) // 2, colors, width)
@@ -82,7 +159,10 @@ class ExecutorProgressBox(ProgressBox):
 
 class StreamedTracePrinter:
     def __init__(
-        self, progress_box: ExecutorProgressBox, stats: TestStatistics, print_callback
+        self,
+        progress_box: ExecutorProgressBox,
+        stats: ThreadedTestStatistics,
+        print_callback,
     ):
         self.console_lock = threading.Lock()
         self.progress_box = progress_box
@@ -105,7 +185,7 @@ class StreamedTracePrinter:
         pass
 
     def start_suite(self, uid, pool_id, queue_id, name, attributes):
-        self.stats.start_suite(name, attributes)
+        self.stats.start_suite(uid, name, attributes)
         # self.timings.start_suite()
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
@@ -114,13 +194,13 @@ class StreamedTracePrinter:
             )
 
     def end_suite(self, uid, pool_id, queue_id, name, attributes):
-        self.stats.end_suite(name, attributes)
+        self.stats.end_suite(uid, name, attributes)
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
             self.progress_box.write_executor_status(pool_id, f"{executor_id}")
 
     def start_test(self, uid, pool_id, queue_id, name, attributes):
-        self.stats.start_test(name, attributes)
+        self.stats.start_test(uid, name, attributes)
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
             self.progress_box.write_executor_status(
@@ -128,18 +208,17 @@ class StreamedTracePrinter:
             )
 
     def end_test(self, uid, pool_id, queue_id, name, attributes):
-        self.stats.end_test(name, attributes)
+        self.stats.end_test(uid, name, attributes)
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
             self.progress_box.add_task_status(attributes["status"])
             self.progress_box.write_executor_status(pool_id, f"{executor_id}")
 
     def log_warning(self, uid, pool_id, queue_id, message):
-        # TODO: this needs namespacing by uid
-        self.stats.log_warning(message)
+        self.stats.log_warning(uid, message)
 
     def log_error(self, uid, pool_id, queue_id, message):
-        self.stats.log_error(message)
+        self.stats.log_error(uid, message)
 
     def print_trace(self, uid, pool_id, queue_id, binary_payload):
         text = binary_payload.data.decode("utf-8")
@@ -153,7 +232,7 @@ class PabotTraceCollector:
         self.process_count = process_count
         self.progress_box = progress_box
         self.verbosity = Verbosity.NORMAL
-        self.stats = TestStatistics()
+        self.stats = ThreadedTestStatistics()
         self.print_summary = True
         self.run_start_time = None
         self.server: ThreadedXMLRPCServer = None
