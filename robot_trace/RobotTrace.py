@@ -562,6 +562,9 @@ class TestTimings:
     def start_suite(self):
         self._record_run_start()
 
+    def end_suite(self):
+        pass
+
     def start_test(self):
         self._record_run_start()
         self.current_test_start_time = time.time()
@@ -811,6 +814,7 @@ class RobotTrace:
         console_progress: str = "AUTO",
         trace_subprocesses: bool = False,
         width: int = 120,
+        can_stream_output: bool = True,
     ):
         # Parse verbosity argument.
         verbosity = verbosity.upper()
@@ -848,7 +852,7 @@ class RobotTrace:
             progress_stream = None
 
         # Configure output based on verbosity.
-        self.live_output = self.verbosity >= Verbosity.DEBUG
+        self.live_output = self.verbosity >= Verbosity.DEBUG and can_stream_output
         self.print_passed = self.verbosity >= Verbosity.DEBUG
         self.print_skipped = self.verbosity >= Verbosity.DEBUG
         self.print_warned = self.verbosity >= Verbosity.NORMAL
@@ -960,6 +964,7 @@ class RobotTrace:
 
     def end_suite(self, name, attributes):
         self.stats.end_suite(name, attributes)
+        self.timings.end_suite()
         self.result_printer.end_suite(name, attributes)
 
         self.progress_box.write_line(0)

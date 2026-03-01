@@ -1,0 +1,221 @@
+#
+# A wrapper around pabot that starts a collector server and invokes all robot
+# sub-processes with a custom listener to report back to the collector. This
+# file is provided under the MIT license.
+#
+# MIT License
+#
+# Copyright (c) 2026 Jonathan Simmonds
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+import sys
+import threading
+import time
+from socketserver import ThreadingMixIn
+from xmlrpc.server import SimpleXMLRPCServer
+
+from robot_trace.RobotTrace import ProgressBox, TestStatistics, TestTimings, Verbosity
+
+HOST = "127.0.0.1"
+PORT = 5292
+
+
+class ThreadedXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):
+    pass
+
+
+class ExecutorProgressBox(ProgressBox):
+    def __init__(self, stream, executors: int, colors: bool, width: int = 120):
+        super().__init__(stream, (executors + 1) // 2, colors, width)
+        self._executors = executors
+        self._executor_statuses: list[str] = [""] * executors
+        half_width = (self.width - 3) // 2
+        self._top_border = "┌" + "─" * half_width + "┬" + "─" * half_width + "┐"
+        self._bottom_border = "└" + "─" * half_width + "┴" + "─" * half_width + "┘"
+        for i in range(len(self._lines)):
+            self._lines[i] = " " * (half_width - 1) + "│" + " " * (half_width - 1)
+
+    def write_executor_status(self, executor_no: int, status: str = ""):
+        assert executor_no < len(self._executor_statuses), (
+            f"{executor_no} must be less than {len(self._executor_statuses)}"
+        )
+        self._executor_statuses[executor_no] = status
+        if not self.stream:
+            return
+        # Update the correct status line
+        status_lineno = executor_no // 2
+        side_width = (self.width - 7) // 2
+        if executor_no % 2 == 0:
+            left_executor = executor_no
+            right_executor = executor_no + 1
+        else:
+            left_executor = executor_no - 1
+            right_executor = executor_no
+        left = self._executor_statuses[left_executor]
+        right = (
+            self._executor_statuses[right_executor]
+            if right_executor < self._executors
+            else ""
+        )
+        status_text = (
+            f"{left:<{side_width}.{side_width}} │ {right:<{side_width}.{side_width}}"
+        )
+        self.write_line(status_lineno, status_text)
+
+
+class StreamedTracePrinter:
+    def __init__(
+        self, progress_box: ExecutorProgressBox, stats: TestStatistics, print_callback
+    ):
+        self.console_lock = threading.Lock()
+        self.progress_box = progress_box
+        self.stats = stats
+        self.print = print_callback
+
+    def _format_executor_id(self, pool_id: int, queue_id: int) -> str:
+        if self.progress_box._executors < 10:
+            return f"[{pool_id:1}][{queue_id:2}]"
+        elif self.progress_box._executors < 100:
+            return f"[{pool_id:2}][{queue_id:2}]"
+        else:
+            return f"[{pool_id:3}][{queue_id:3}]"
+
+    def report_test_count(self, test_count):
+        self.stats.top_level_test_count = test_count
+        self.progress_box.total_tasks = test_count
+
+    def report_context(self, context):
+        pass
+
+    def start_suite(self, uid, pool_id, queue_id, name, attributes):
+        self.stats.start_suite(name, attributes)
+        # self.timings.start_suite()
+        executor_id = self._format_executor_id(pool_id, queue_id)
+        with self.console_lock:
+            self.progress_box.write_executor_status(
+                pool_id, f"{executor_id}[SUITE] {name}"
+            )
+
+    def end_suite(self, uid, pool_id, queue_id, name, attributes):
+        self.stats.end_suite(name, attributes)
+        executor_id = self._format_executor_id(pool_id, queue_id)
+        with self.console_lock:
+            self.progress_box.write_executor_status(pool_id, f"{executor_id}")
+
+    def start_test(self, uid, pool_id, queue_id, name, attributes):
+        self.stats.start_test(name, attributes)
+        executor_id = self._format_executor_id(pool_id, queue_id)
+        with self.console_lock:
+            self.progress_box.write_executor_status(
+                pool_id, f"{executor_id}[TEST] {name}"
+            )
+
+    def end_test(self, uid, pool_id, queue_id, name, attributes):
+        self.stats.end_test(name, attributes)
+        executor_id = self._format_executor_id(pool_id, queue_id)
+        with self.console_lock:
+            self.progress_box.add_task_status(attributes["status"])
+            self.progress_box.write_executor_status(pool_id, f"{executor_id}")
+
+    def log_warning(self, uid, pool_id, queue_id, message):
+        # TODO: this needs namespacing by uid
+        self.stats.log_warning(message)
+
+    def log_error(self, uid, pool_id, queue_id, message):
+        self.stats.log_error(message)
+
+    def print_trace(self, uid, pool_id, queue_id, binary_payload):
+        text = binary_payload.data.decode("utf-8")
+        with self.console_lock:
+            self.print(text)
+
+
+class PabotTraceCollector:
+    def __init__(self, process_count: int, progress_box: ProgressBox):
+        self.stream = sys.stdout
+        self.process_count = process_count
+        self.progress_box = progress_box
+        self.verbosity = Verbosity.NORMAL
+        self.stats = TestStatistics()
+        self.run_start_time = None
+        self.server: ThreadedXMLRPCServer = None
+        self.server_thread: threading.Thread = None
+
+        # Finally, prepare the console interface.
+        self.progress_box.draw()
+
+    def _writeln(self, text=""):
+        self.stream.write(text + "\n")
+        self.stream.flush()
+
+    def _print_trace(self, text: str):
+        # First clear the progress box, so we don't have to worry about
+        # interleaving with the trace output.
+        self.progress_box.clear()
+        # Then print the trace text as normal.
+        self._writeln(text)
+        # Finally redraw the progress box with the current test progress.
+        self.progress_box.draw()
+
+    def __enter__(self):
+        self.run_start_time = time.time()
+        # Create the trace writer.
+        trace_writer = StreamedTracePrinter(
+            self.progress_box, self.stats, self._print_trace
+        )
+        # Start the collector server.
+        self.server = ThreadedXMLRPCServer(
+            (HOST, PORT), allow_none=True, logRequests=False
+        )
+        self.server.register_function(
+            trace_writer.report_test_count, "report_test_count"
+        )
+        self.server.register_function(trace_writer.report_context, "report_context")
+        self.server.register_function(trace_writer.start_suite, "start_suite")
+        self.server.register_function(trace_writer.end_suite, "end_suite")
+        self.server.register_function(trace_writer.start_test, "start_test")
+        self.server.register_function(trace_writer.end_test, "end_test")
+        self.server.register_function(trace_writer.log_warning, "log_warning")
+        self.server.register_function(trace_writer.log_error, "log_error")
+        self.server.register_function(trace_writer.print_trace, "print_trace")
+        # Run server in a background thread.
+        self.server_thread = threading.Thread(target=self.server.serve_forever)
+        self.server_thread.start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # First, shutdown the server.
+        self.server.shutdown()
+        self.server.server_close()
+        self.server_thread.join()
+
+        # Then clear the progress box.
+        self.progress_box.clear()
+
+        # And finally print a summary of the run.
+        if self.verbosity >= Verbosity.QUIET:
+            self._writeln("RUN COMPLETE: " + self.stats.format_run_summary())
+        if self.verbosity >= Verbosity.NORMAL:
+            run_results = self.stats.format_run_results()
+            if run_results:
+                self._writeln("\n" + run_results)
+
+        if self.run_start_time is not None and self.verbosity >= Verbosity.NORMAL:
+            elapsed_str = TestTimings.format_time(time.time() - self.run_start_time)
+            self._writeln(f"Total elapsed: {elapsed_str}.")

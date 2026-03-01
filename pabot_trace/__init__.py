@@ -1,0 +1,4 @@
+from .PabotTraceReporter import PabotTraceReporter as pabot_trace
+
+__all__ = ["pabot_trace"]
+__version__ = "1.0.5"

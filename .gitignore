@@ -210,3 +210,7 @@ __marimo__/
 output.xml
 report.html
 log.html
+
+# Pabot files
+pabot_results/
+.pabotsuitenames
