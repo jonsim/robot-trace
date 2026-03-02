@@ -36,6 +36,11 @@ HOST = "127.0.0.1"
 
 
 class PabotTraceReporter(RobotTrace):
+    """
+    A Robot Framework listener for pabot sub-processes that reports results back
+    to a central PabotTraceCollector.
+    """
+
     ROBOT_LISTENER_API_VERSION = 2
 
     def __init__(
@@ -45,6 +50,9 @@ class PabotTraceReporter(RobotTrace):
         trace_subprocesses: bool = RobotTraceArgs.DEFAULT_TRACE_SUBPROCESSES,
         width: int = RobotTraceArgs.DEFAULT_WIDTH,
     ):
+        """
+        Initialize the reporter and connect to the collector server.
+        """
         super().__init__(
             verbosity=verbosity,
             colors=colors,
@@ -62,11 +70,17 @@ class PabotTraceReporter(RobotTrace):
         self._process_count = None
 
     def _print_trace(self, text: str):
+        """
+        Send a formatted trace message to the collector server.
+        """
         self.proxy.print_trace(
             self._uid, self._pool_id, self._queue_index, Binary(text.encode("utf-8"))
         )
 
     def _record_id(self):
+        """
+        Identify the pabot executor's ID and notify the collector.
+        """
         from robot.libraries.BuiltIn import BuiltIn
 
         builtin = BuiltIn()
@@ -85,6 +99,9 @@ class PabotTraceReporter(RobotTrace):
         self.proxy.report_context(context)
 
     def start_suite(self, name, attributes):
+        """
+        Notify the collector when a test suite starts.
+        """
         if not self._uid:
             self._record_id()
         self.proxy.start_suite(
@@ -93,24 +110,37 @@ class PabotTraceReporter(RobotTrace):
         super().start_suite(name, attributes)
 
     def end_suite(self, name, attributes):
+        """
+        Notify the collector when a test suite ends.
+        """
         self.proxy.end_suite(
             self._uid, self._pool_id, self._queue_index, name, attributes
         )
         super().end_suite(name, attributes)
 
     def start_test(self, name, attributes):
+        """
+        Notify the collector when a test case starts.
+        """
         self.proxy.start_test(
             self._uid, self._pool_id, self._queue_index, name, attributes
         )
         super().start_test(name, attributes)
 
     def end_test(self, name, attributes):
+        """
+        Notify the collector when a test case ends.
+        """
         self.proxy.end_test(
             self._uid, self._pool_id, self._queue_index, name, attributes
         )
         super().end_test(name, attributes)
 
     def log_message(self, attributes):
+        """
+        Notify the collector about log messages, ensuring errors and warnings are
+        correctly categorized.
+        """
         level = attributes["level"]
         text = attributes["message"]
 

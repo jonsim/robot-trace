@@ -39,6 +39,10 @@ from typing import Literal
 
 @functools.total_ordering
 class Verbosity(enum.Enum):
+    """
+    Enum representing the verbosity levels for RobotTrace output.
+    """
+
     QUIET = 0
     NORMAL = 1
     DEBUG = 2
@@ -57,7 +61,10 @@ class Verbosity(enum.Enum):
         return NotImplemented
 
     @classmethod
-    def from_string(cls, s):
+    def from_string(cls, s: str) -> "Verbosity":
+        """
+        Convert a string to a Verbosity level. Defaults to NORMAL if unknown.
+        """
         s = s.upper()
         if s in cls.__members__:
             return cls[s]
@@ -66,6 +73,10 @@ class Verbosity(enum.Enum):
 
 # ANSI escape codes for colors and styles.
 class _ANSICode:
+    """
+    A helper class for wrapping text in ANSI escape codes.
+    """
+
     def __init__(self, code: str):
         self.code = code
 
@@ -80,9 +91,17 @@ class _ANSICode:
 
 
 class ANSI:
+    """
+    A collection of ANSI escape codes for terminal formatting.
+    """
+
     RESET = _ANSICode("\033[0m")
 
     class Cursor:
+        """
+        ANSI escape codes for cursor manipulation.
+        """
+
         CLEAR_LINE = "\033[2K"
 
         HOME = "\r"
@@ -140,6 +159,10 @@ class ANSI:
         BRIGHT_WHITE = _ANSICode("\033[107m")
 
     class Style:
+        """
+        ANSI escape codes for text styles.
+        """
+
         BOLD = _ANSICode("\033[1m")
         DIM = _ANSICode("\033[2m")
         ITALIC = _ANSICode("\033[3m")
@@ -155,6 +178,10 @@ class ANSI:
 
 
 class TraceStack:
+    """
+    A stack-based buffer for capturing and organizing test/suite execution traces.
+    """
+
     def __init__(self, name: str):
         self.name = name
         self._trace: str = ""
@@ -165,6 +192,9 @@ class TraceStack:
         self.has_failures: bool = False
 
     def reset(self, name: str):
+        """
+        Clear the stack and reset for a new test or suite.
+        """
         self.name = name
         self._trace = ""
         self._depth = 0
@@ -205,6 +235,10 @@ class TraceStack:
 
 
 class TracePrinter:
+    """
+    Base class for printing Robot result traces.
+    """
+
     def __init__(
         self,
         print_passed: bool,
@@ -252,6 +286,9 @@ class TracePrinter:
         self.print(f"Logged from test {stream}: {message.rstrip()}")
 
     def _format_banner(self, status_text: str, status_color, name: str) -> str:
+        """
+        Format a status banner with an optional status color and a name.
+        """
         if self.colors and status_color:
             status_text = status_color(status_text)
         status_line = f"{status_text}: {name}"
@@ -260,6 +297,9 @@ class TracePrinter:
         return f"{status_line}\n{underline}"
 
     def _format_keyword_header(self, name: str, attributes: dict) -> str:
+        """
+        Format the header line for a keyword in the trace output.
+        """
         kwtype = attributes["type"]
         args = attributes["args"]
         if kwtype != "KEYWORD":
@@ -271,6 +311,9 @@ class TracePrinter:
         return f"▶ {name}{argstr}"
 
     def _format_keyword_status(self, status: str, elapsed_time_ms: int) -> str:
+        """
+        Format the status and elapsed time of a keyword for the trace output.
+        """
         elapsed = TestTimings.format_time(elapsed_time_ms / 1000)
         if status == "PASS":
             status_text = "✓ PASS"
@@ -296,6 +339,9 @@ class TracePrinter:
             return f"  ? {status}    {elapsed}"
 
     def _format_log_message(self, level: str, text: str, indent: str = "") -> list[str]:
+        """
+        Format a log message with the given level and indentation.
+        """
         level_initial = level[0].upper()
         text_lines = text.splitlines()
         lines = []
@@ -318,6 +364,11 @@ class TracePrinter:
 
 
 class BufferedTracePrinter(TracePrinter):
+    """
+    A results printer that buffers traces and only prints them when a test or
+    suite completes, depending on the status.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.test_trace_stack = TraceStack("<prerun>")
@@ -431,6 +482,10 @@ class BufferedTracePrinter(TracePrinter):
 
 
 class LiveTracePrinter(TracePrinter):
+    """
+    A results printer that prints traces immediately as events happen.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.indent = 0
@@ -474,6 +529,10 @@ class LiveTracePrinter(TracePrinter):
 
 
 class TestStatistics:
+    """
+    Tracks and formats summary statistics for the test run.
+    """
+
     def __init__(self):
         self.top_level_test_count: int | None = None
         self.current_suite: str | None = None
@@ -536,6 +595,9 @@ class TestStatistics:
         return f"{len(self.started_tests):2d}/{self.top_level_test_count:2d}"
 
     def format_run_summary(self) -> str:
+        """
+        Format a one-line summary of the overall test run results.
+        """
         plural = "s" if self.top_level_test_count != 1 else ""
         summary = (
             f"{self.top_level_test_count or 0} test{plural}, "
@@ -553,6 +615,9 @@ class TestStatistics:
         return summary
 
     def format_run_results(self) -> str:
+        """
+        Format a detailed list of failing, erroring, and warning tests.
+        """
         results = ""
         if self.failed_tests:
             plural = "s" if len(self.failed_tests) != 1 else ""
@@ -577,6 +642,10 @@ class TestStatistics:
 
 
 class TestTimings:
+    """
+    Tracks and formats elapsed time and ETAs for the test run.
+    """
+
     def __init__(self):
         self.run_start_time: float | None = None
         self.current_test_start_time: float | None = None
@@ -600,6 +669,9 @@ class TestTimings:
 
     @staticmethod
     def format_time(seconds: float | int | None) -> str:
+        """
+        Format a duration in seconds into a human-readable string (e.g., 1h 2m 3s).
+        """
         if seconds is None:
             return "unknown"
         seconds = int(round(seconds))
@@ -631,6 +703,10 @@ class TestTimings:
 
 
 class ProgressBox:
+    """
+    Displays a persistent progress box and progress bar at the bottom of the console.
+    """
+
     def __init__(self, stream, status_line_count: int, colors: bool, width: int = 120):
         self.stream = stream
         self.colors = colors
@@ -644,6 +720,9 @@ class ProgressBox:
         self._bottom_border = "└" + "─" * (self.width - 2) + "┘"
 
     def draw_progress_bar(self):
+        """
+        Draw the progress bar or solid border at the top of the box.
+        """
         if not self.stream:
             return
 
@@ -693,6 +772,9 @@ class ProgressBox:
         self.stream.write(f"│ {self._lines[line_no]} │")
 
     def draw(self):
+        """
+        Draw the entire progress box and progress bar to the stream.
+        """
         if not self.stream:
             return
 
@@ -711,10 +793,20 @@ class ProgressBox:
 
     @property
     def total_tasks(self) -> int | None:
+        """
+        The total number of tasks (tests) to be executed, including in any child
+        suites.
+        """
         return self._total_tasks
 
     @total_tasks.setter
     def total_tasks(self, value: int):
+        """
+        Set the total number of tasks (tests) to be executed (including in any
+        child suites). While this method is safe to call multiple times, to avoid
+        the progress bar rescaling midway through a run, it should only be called
+        once at the start of the test run.
+        """
         assert value > 0, "total_tasks must be positive"
         old_value = self._total_tasks
         self._total_tasks = value
@@ -740,6 +832,9 @@ class ProgressBox:
         self.stream.flush()
 
     def clear(self):
+        """
+        Clear the progress box from the console.
+        """
         if not self.stream:
             return
         # Clear the current line and move the cursor up. Do this for each line,
@@ -751,6 +846,9 @@ class ProgressBox:
         self.stream.flush()
 
     def write_line(self, line_no: int, left_text: str = "", right_text: str = ""):
+        """
+        Write a line of text into the progress box.
+        """
         if not self.stream:
             return
         # Format the left and right text into a single line. Right text takes
@@ -781,6 +879,11 @@ class ProgressBox:
 
 
 class RobotTraceArgs:
+    """
+    Configuration options for the RobotTrace listener, parsed from listener's
+    command-line arguments.
+    """
+
     DEFAULT_VERBOSITY: str = "NORMAL"
     DEFAULT_COLORS: str = "AUTO"
     DEFAULT_CONSOLE_PROGRESS: str = "AUTO"
@@ -797,6 +900,10 @@ class RobotTraceArgs:
         width: int = DEFAULT_WIDTH,
         can_stream_output: bool = DEFAULT_CAN_STREAM_OUTPUT,
     ):
+        """
+        Initialize the arguments from the given values, performing validation and
+        detection of terminal features (like colors and width).
+        """
         # Parse verbosity argument.
         verbosity = verbosity.upper()
         self.verbosity = Verbosity.from_string(verbosity)
@@ -853,6 +960,11 @@ class RobotTraceArgs:
 
 
 class InterceptStream:
+    """
+    A file-like object that intercepts writes to a stream and forwards them to a
+    callback.
+    """
+
     def __init__(self, real_stream, write_callback):
         self._real_stream = real_stream
         self._write_callback = write_callback
@@ -877,6 +989,10 @@ class InterceptStream:
 
 
 class PopenWrapper:
+    """
+    A wrapper around Popen that intercepts stdout and stderr from a subprocess.
+    """
+
     def __init__(self, real_popen, stdout_callback, stderr_callback):
         self._real_popen = real_popen
         self._stdout_callback = stdout_callback
@@ -903,6 +1019,11 @@ class PopenWrapper:
 
 
 class RobotTrace:
+    """
+    The main Robot Framework listener class that implements the Version 2 API
+    to report test progress to the console.
+    """
+
     ROBOT_LISTENER_API_VERSION = 2
 
     def __init__(
@@ -914,6 +1035,10 @@ class RobotTrace:
         width: int = RobotTraceArgs.DEFAULT_WIDTH,
         can_stream_output: bool = RobotTraceArgs.DEFAULT_CAN_STREAM_OUTPUT,
     ):
+        """
+        Initialize the listener with the given arguments. This sets up the
+        progress box, statistics tracking, and the result printer.
+        """
         # Parse arguments.
         self.args = RobotTraceArgs(
             verbosity=verbosity,
@@ -1006,6 +1131,9 @@ class RobotTrace:
     # ------------------------------------------------------------------ suite
 
     def start_suite(self, name, attributes):
+        """
+        Called when a test suite starts.
+        """
         suite_name = attributes["longname"]
         self.stats.start_suite(name, attributes)
         if self.stats.top_level_test_count is not None:
@@ -1018,6 +1146,9 @@ class RobotTrace:
         )
 
     def end_suite(self, name, attributes):
+        """
+        Called when a test suite ends.
+        """
         self.stats.end_suite(name, attributes)
         self.timings.end_suite()
         self.result_printer.end_suite(name, attributes)
@@ -1027,6 +1158,9 @@ class RobotTrace:
     # ------------------------------------------------------------------ test
 
     def start_test(self, name, attributes):
+        """
+        Called when a test case starts.
+        """
         self.stats.start_test(name, attributes)
         self.timings.start_test()
         self.result_printer.start_test(name, attributes)
@@ -1039,6 +1173,9 @@ class RobotTrace:
         )
 
     def end_test(self, name, attributes):
+        """
+        Called when a test case ends.
+        """
         self.stats.end_test(name, attributes)
         self.timings.end_test()
         self.progress_box.add_task_status(attributes["status"])
@@ -1048,6 +1185,9 @@ class RobotTrace:
     # ------------------------------------------------------------------ keyword
 
     def start_keyword(self, name, attributes):
+        """
+        Called when a keyword starts.
+        """
         self.result_printer.start_keyword(self.in_test, name, attributes)
 
         kwtype = attributes["type"]
@@ -1062,6 +1202,9 @@ class RobotTrace:
         self.progress_box.write_line(2, f"[{kwname}]  {argstr}")
 
     def end_keyword(self, name, attributes):
+        """
+        Called when a keyword ends.
+        """
         self.result_printer.end_keyword(self.in_test, name, attributes)
 
         self.progress_box.write_line(2)
@@ -1069,6 +1212,9 @@ class RobotTrace:
     # ------------------------------------------------------------------ logging
 
     def log_message(self, attributes):
+        """
+        Called when a log message is written.
+        """
         self.result_printer.log_message(self.in_test, attributes)
         level = attributes["level"]
         text = attributes["message"]
@@ -1079,11 +1225,18 @@ class RobotTrace:
             self.stats.log_warning(text)
 
     def log_message_to_console(self, message: str, stream: Literal["stdout", "stderr"]):
+        """
+        Called when a log message is written to the console via the `Log To Console`
+        keyword, or logging at the `CONSOLE` log level.
+        """
         self.result_printer.log_message_to_console(self.in_test, message, stream)
 
     # ------------------------------------------------------------------ close
 
     def close(self):
+        """
+        Called when the test execution finishes.
+        """
         self.progress_box.clear()
 
         if self.args.verbosity >= Verbosity.QUIET:
@@ -1102,6 +1255,9 @@ class RobotTrace:
 
 
 def _past_tense(verb: str) -> str:
+    """
+    Convert a verb to its past-tense form, maintaining capitalization.
+    """
     is_upper = verb.isupper()
     is_title = verb.istitle()
     v = verb.lower()

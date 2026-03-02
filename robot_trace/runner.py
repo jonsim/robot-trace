@@ -31,7 +31,15 @@ import sys
 
 
 class RobotTraceRunnerArgs:
+    """
+    Argument parser for the `robot-trace` runner script.
+    """
+
     def __init__(self, args: list[str]):
+        """
+        Parse the given arguments, separating Robot Framework arguments from
+        custom `robot-trace` arguments.
+        """
         self.robot_args = []
         self.console_colors = None
         self.console_width = None
@@ -121,6 +129,9 @@ class RobotTraceRunnerArgs:
 
 
 def main():
+    """
+    The main entry point for the `robot-trace` runner script.
+    """
     # Parse arguments for the runner wrapper.
     args = RobotTraceRunnerArgs(sys.argv[1:])
 

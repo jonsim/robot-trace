@@ -34,7 +34,16 @@ HOST = "127.0.0.1"
 
 
 class PabotTestCountReporter:
+    """
+    A Robot Framework prerun modifier that reports the total test count to the
+    PabotTraceCollector.
+    """
+
     def visit_suite(self, suite):
+        """
+        Visits the test suite and reports its total test count to the collector.
+        Does not visit any child suites or tests.
+        """
         # Connect to the collector server and report total test count.
         port = int(os.environ["_PABOT_TRACE_COLLECTOR_PORT"])
         proxy = ServerProxy(f"http://{HOST}:{port}/", allow_none=True)

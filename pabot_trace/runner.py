@@ -37,6 +37,9 @@ from .PabotTraceCollector import ExecutorProgressBox, PabotTraceCollector
 
 
 def main():
+    """
+    The main entry point for the `pabot-trace` runner script.
+    """
     # Parse arguments for the runner wrapper.
     args = RobotTraceRunnerArgs(sys.argv[1:])
 

@@ -45,15 +45,28 @@ PORT = 0
 
 
 class ThreadedXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):
+    """
+    A threaded XML-RPC server that can handle multiple concurrent requests from
+    PabotTraceReporters.
+    """
+
     pass
 
 
 class ThreadedTestStatistics(TestStatistics):
+    """
+    Thread-safe statistics tracking for multiple concurrent test suites.
+    """
+
     def __init__(self):
         self.top_level_test_count = None
         self._stats: dict[str, TestStatistics] = {}
 
     def _get_suite_statistics(self, uid) -> TestStatistics:
+        """
+        Get the TestStatistics object for a specific suite (identified by UID).
+        Creates a new one if it doesn't exist.
+        """
         if uid not in self._stats:
             self._stats[uid] = TestStatistics()
         return self._stats[uid]
@@ -107,25 +120,48 @@ class ThreadedTestStatistics(TestStatistics):
         return errors
 
     def start_suite(self, uid, name, attributes):
+        """
+        Record the start of a suite for a specific executor.
+        """
         self._get_suite_statistics(uid).start_suite(name, attributes)
 
     def end_suite(self, uid, name, attributes):
+        """
+        Record the end of a suite for a specific executor.
+        """
         self._get_suite_statistics(uid).end_suite(name, attributes)
 
     def start_test(self, uid, name, attributes):
+        """
+        Record the start of a test case for a specific executor.
+        """
         self._get_suite_statistics(uid).start_test(name, attributes)
 
     def end_test(self, uid, name, attributes):
+        """
+        Record the end of a test case for a specific executor.
+        """
         self._get_suite_statistics(uid).end_test(name, attributes)
 
     def log_warning(self, uid, message):
+        """
+        Record a warning for a specific executor.
+        """
         self._get_suite_statistics(uid).log_warning(message)
 
     def log_error(self, uid, message):
+        """
+        Record an error for a specific executor.
+        """
         self._get_suite_statistics(uid).log_error(message)
 
 
 class ExecutorProgressBox(ProgressBox):
+    """
+    A specialized progress box for Pabot that displays the status of each
+    parallel executor.
+    """
+
     def __init__(self, stream, colors: bool, width: int = 120):
         super().__init__(stream, 0, colors, width)
         self._executor_statuses: list[str] = []
@@ -136,6 +172,9 @@ class ExecutorProgressBox(ProgressBox):
         self._blank_line = " " * (left_width - 1) + "│" + " " * (right_width - 1)
 
     def write_executor_status(self, executor_no: int, status: str = ""):
+        """
+        Update the status text for a specific executor in the progress box.
+        """
         if not self.stream:
             return
         # If we haven't seen this executor before, extend the list to the
@@ -178,6 +217,11 @@ class ExecutorProgressBox(ProgressBox):
 
 
 class StreamedTracePrinter:
+    """
+    Handles printing traces from multiple concurrent sources, ensuring that
+    output from different executors is not interleaved.
+    """
+
     def __init__(
         self,
         progress_box: ExecutorProgressBox,
@@ -190,6 +234,9 @@ class StreamedTracePrinter:
         self.print = print_callback
 
     def _format_executor_id(self, pool_id: int, queue_id: int) -> str:
+        """
+        Format the executor's ID for display in the trace output.
+        """
         executor_count = len(self.progress_box._executor_statuses)
         if executor_count < 10:
             return f"[{pool_id:1}][{queue_id:2}]"
@@ -199,13 +246,22 @@ class StreamedTracePrinter:
             return f"[{pool_id:3}][{queue_id:3}]"
 
     def report_test_count(self, test_count):
+        """
+        Record the total test count and update the progress box.
+        """
         self.stats.top_level_test_count = test_count
         self.progress_box.total_tasks = test_count
 
     def report_context(self, context):
+        """
+        Record context information for a specific suite.
+        """
         pass
 
     def start_suite(self, uid, pool_id, queue_id, name, attributes):
+        """
+        Handle the start of a test suite from a client reporter.
+        """
         self.stats.start_suite(uid, name, attributes)
         # self.timings.start_suite()
         executor_id = self._format_executor_id(pool_id, queue_id)
@@ -215,12 +271,18 @@ class StreamedTracePrinter:
             )
 
     def end_suite(self, uid, pool_id, queue_id, name, attributes):
+        """
+        Handle the end of a test suite from a client reporter.
+        """
         self.stats.end_suite(uid, name, attributes)
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
             self.progress_box.write_executor_status(pool_id, f"{executor_id}")
 
     def start_test(self, uid, pool_id, queue_id, name, attributes):
+        """
+        Handle the start of a test case from a client reporter.
+        """
         self.stats.start_test(uid, name, attributes)
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
@@ -229,6 +291,9 @@ class StreamedTracePrinter:
             )
 
     def end_test(self, uid, pool_id, queue_id, name, attributes):
+        """
+        Handle the end of a test case from a client reporter.
+        """
         self.stats.end_test(uid, name, attributes)
         executor_id = self._format_executor_id(pool_id, queue_id)
         with self.console_lock:
@@ -242,13 +307,24 @@ class StreamedTracePrinter:
         self.stats.log_error(uid, message)
 
     def print_trace(self, uid, pool_id, queue_id, binary_payload):
+        """
+        Prints the received trace data from a client reporter.
+        """
         text = binary_payload.data.decode("utf-8")
         with self.console_lock:
             self.print(text)
 
 
 class PabotTraceCollector:
+    """
+    A standalone collector server that coordinates reporting from multiple
+    parallel executors. Designed to be used as a context manager.
+    """
+
     def __init__(self, stream, progress_box: ProgressBox):
+        """
+        Initialize the collector server with a target stream and a progress box.
+        """
         self.stream = stream
         self.progress_box = progress_box
         self.verbosity = Verbosity.NORMAL
@@ -276,6 +352,9 @@ class PabotTraceCollector:
         self.progress_box.draw()
 
     def __enter__(self):
+        """
+        Start the collector server and reporting mechanism.
+        """
         self.run_start_time = time.time()
         # Create the trace writer.
         trace_writer = StreamedTracePrinter(
@@ -303,6 +382,9 @@ class PabotTraceCollector:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Shut down the collector server and print the final test summary.
+        """
         # First, shutdown the server.
         self.server.shutdown()
         self.server.server_close()
