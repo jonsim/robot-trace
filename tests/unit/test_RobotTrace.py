@@ -1,3 +1,6 @@
+# Unit tests for RobotTrace.py.
+#
+# Copyright (c) 2026 Jonathan Simmonds
 import unittest
 from io import StringIO
 from unittest.mock import patch

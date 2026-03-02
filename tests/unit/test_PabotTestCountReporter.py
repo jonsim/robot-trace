@@ -1,3 +1,6 @@
+# Unit tests for PabotTestCountReporter.py.
+#
+# Copyright (c) 2026 Jonathan Simmonds
 import unittest
 from unittest.mock import MagicMock, patch
 

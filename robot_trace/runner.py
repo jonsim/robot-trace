@@ -1,6 +1,8 @@
 #
 # A thin wrapper around robot that adds the RobotTrace listener and
-# automatically sets its arguments. This file is provided under the MIT license.
+# automatically sets its arguments.
+#
+# This file is provided under the MIT license:
 #
 # MIT License
 #

@@ -1,7 +1,8 @@
 #
 # A wrapper around pabot that starts a collector server and invokes all robot
-# sub-processes with a custom listener to report back to the collector. This
-# file is provided under the MIT license.
+# sub-processes with a custom listener to report back to the collector.
+#
+# This file is provided under the MIT license:
 #
 # MIT License
 #

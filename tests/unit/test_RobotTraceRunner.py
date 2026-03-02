@@ -1,3 +1,6 @@
+# Unit tests for robot_trace/runner.py.
+#
+# Copyright (c) 2026 Jonathan Simmonds
 import unittest
 
 from robot_trace.runner import RobotTraceRunnerArgs

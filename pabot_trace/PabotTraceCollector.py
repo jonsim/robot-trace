@@ -1,7 +1,9 @@
 #
-# A wrapper around pabot that starts a collector server and invokes all robot
-# sub-processes with a custom listener to report back to the collector. This
-# file is provided under the MIT license.
+# A standalone collector server which collects reports from one or more client
+# reporters (PabotTraceReporter), consolidating and serialising the output to
+# the console.
+#
+# This file is provided under the MIT license:
 #
 # MIT License
 #

@@ -1,3 +1,6 @@
+# Unit tests for PabotTraceReporter.py.
+#
+# Copyright (c) 2026 Jonathan Simmonds
 import sys
 import unittest
 from io import StringIO

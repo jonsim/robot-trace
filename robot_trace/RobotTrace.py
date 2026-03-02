@@ -1,6 +1,8 @@
 #
 # Prints Robot test progress to stdout as execution happens. Refer to the README
-# for usage instructions. This file is provided under the MIT license.
+# for usage instructions.
+#
+# This file is provided under the MIT license:
 #
 # MIT License
 #
