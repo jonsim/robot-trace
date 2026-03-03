@@ -28,6 +28,7 @@
 #
 import enum
 import functools
+import os
 import re
 import shutil
 import subprocess
@@ -889,7 +890,7 @@ class RobotTraceArgs:
     DEFAULT_CONSOLE_PROGRESS: str = "AUTO"
     DEFAULT_TRACE_SUBPROCESSES: bool = False
     DEFAULT_WIDTH: int = 120
-    DEFAULT_CAN_STREAM_OUTPUT: bool = True
+    DEFAULT_CAN_STREAM_OUTPUT: bool | None = None
 
     def __init__(
         self,
@@ -898,7 +899,7 @@ class RobotTraceArgs:
         console_progress: str = DEFAULT_CONSOLE_PROGRESS,
         trace_subprocesses: bool = DEFAULT_TRACE_SUBPROCESSES,
         width: int = DEFAULT_WIDTH,
-        can_stream_output: bool = DEFAULT_CAN_STREAM_OUTPUT,
+        can_stream_output: bool | None = DEFAULT_CAN_STREAM_OUTPUT,
     ):
         """
         Initialize the arguments from the given values, performing validation and
@@ -951,6 +952,8 @@ class RobotTraceArgs:
         self.width = min(shutil.get_terminal_size(fallback=(width, 40)).columns, width)
 
         # Configure output based on verbosity.
+        if can_stream_output is None:
+            can_stream_output = os.environ.get("ROBOT_TRACE_LIVE_OUTPUT", "1") == "1"
         self.live_output = self.verbosity >= Verbosity.DEBUG and can_stream_output
         self.print_passed = self.verbosity >= Verbosity.DEBUG
         self.print_skipped = self.verbosity >= Verbosity.DEBUG
