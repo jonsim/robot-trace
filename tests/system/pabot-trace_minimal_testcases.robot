@@ -99,12 +99,17 @@ Run Minimal Testcase
     ...    output matches.
     [Arguments]    ${testcase}    @{additional_args}    ${mode}=normal    ${expected_rc}=0
     # Compute the testcase file and expected result file.
-    ${testcase_file} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.robot
-    ${testcase_result} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.trace.${mode}
+    VAR    ${testcase_file}    ${TESTCASE_DIR}${/}${testcase}.robot
+    VAR    ${testcase_result}    ${TESTCASE_DIR}${/}${testcase}.trace
     IF    ${ROBOT_VERSION_MAJOR} < 7
         IF    os.path.exists("${TESTCASE_DIR}${/}${testcase}.trace.rf6.${mode}")
-            ${testcase_result} =    Set Variable    ${TESTCASE_DIR}${/}${testcase}.trace.rf6.${mode}
+            VAR    ${testcase_result}    ${testcase_result}.rf6
         END
+    END
+    IF    "${mode}" == "verbose"
+        VAR    ${testcase_result}    ${testcase_result}.verbose.buffered
+    ELSE
+        VAR    ${testcase_result}    ${testcase_result}.normal
     END
     IF    "failing" in "${testcase}" and ${expected_rc} == 0
         ${match} =    Evaluate    re.search(r"(\\d+)failing", "${testcase}")
@@ -116,10 +121,6 @@ Run Minimal Testcase
     # Add any additional arguments.
     IF    "${mode}" == "verbose"
         Append To List    ${additional_args}    --verbose
-        # Run pabot-trace and check the output matches the expectation.
-        # Pabot doesn't report live in verbose mode, so needs a different
-        # expectation when running in verbose mode.
-        ${testcase_result} =    Set Variable    ${testcase_result}.pabot
     END
 
     # Run pabot-trace and check the output matches the expectation.
