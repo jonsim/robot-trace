@@ -32,6 +32,7 @@ where = ["."]
 [project.scripts]
 robot-trace = "robot_trace.runner:main"
 pabot-trace = "pabot_trace.runner:main"
+rebot-trace = "rebot_trace.runner:main"
 
 [tool.ruff]
 line-length = 88
