@@ -1,0 +1,20 @@
+SUITE: Nested Group Passing
+═══════════════════════════
+TEST: Nested Group Passing.Nested GROUP Passing
+═══════════════════════════════════════════════
+▶ BuiltIn.Log('Outside groups')
+  I Outside groups
+  ✓ PASS     0s
+▶ GROUP    First level group
+  ▶ BuiltIn.Log('Inside group 1')
+    I Inside group 1
+    ✓ PASS     0s
+  ▶ GROUP    Second level group
+    ▶ BuiltIn.Log('Inside group 2')
+      I Inside group 2
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

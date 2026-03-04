@@ -1,0 +1,24 @@
+SUITE: While Failing
+════════════════════
+TEST: While Failing.WHILE Failing
+═════════════════════════════════
+▶ VAR    ${i}    0
+  I ${i} = 0
+  ✓ PASS     0s
+▶ WHILE    ${i} < 5
+  ▶ ITERATION
+    ▶ BuiltIn.Log('${i} is still less than 5')
+      I 0 is still less than 5
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i}++')
+      F Evaluating expression '0++' failed: SyntaxError: invalid syntax (<string>, line 1)
+      ✗ FAIL     0s
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- While Failing.WHILE Failing
+
+Total elapsed:  0s.

@@ -1,0 +1,52 @@
+SUITE: While Passing
+════════════════════
+TEST: While Passing.WHILE Passing
+═════════════════════════════════
+▶ VAR    ${i}    0
+  I ${i} = 0
+  ✓ PASS     0s
+▶ WHILE    ${i} < 5
+  ▶ ITERATION
+    ▶ BuiltIn.Log('${i} is still less than 5')
+      I 0 is still less than 5
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + 1')
+      I ${i} = 1
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION
+    ▶ BuiltIn.Log('${i} is still less than 5')
+      I 1 is still less than 5
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + 1')
+      I ${i} = 2
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION
+    ▶ BuiltIn.Log('${i} is still less than 5')
+      I 2 is still less than 5
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + 1')
+      I ${i} = 3
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION
+    ▶ BuiltIn.Log('${i} is still less than 5')
+      I 3 is still less than 5
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + 1')
+      I ${i} = 4
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION
+    ▶ BuiltIn.Log('${i} is still less than 5')
+      I 4 is still less than 5
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + 1')
+      I ${i} = 5
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

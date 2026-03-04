@@ -1,0 +1,30 @@
+TEST FAILED: Nested Group Failing.Nested GROUP Failing
+══════════════════════════════════════════════════════
+▶ BuiltIn.Log('Outside groups')
+  I Outside groups
+  ✓ PASS     0s
+▶ GROUP    Initial group
+  ▶ BuiltIn.Log('Inside initial group')
+    I Inside initial group
+    ✓ PASS     0s
+  ✓ PASS     0s
+▶ GROUP    First level group
+  ▶ BuiltIn.Log('Inside group 1')
+    I Inside group 1
+    ✓ PASS     0s
+  ▶ GROUP    Second level group
+    ▶ BuiltIn.Log('Inside group 2')
+      I Inside group 2
+      ✓ PASS     0s
+    ▶ BuiltIn.Fail('Bad things happened')
+      F Bad things happened
+      ✗ FAIL     0s
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Nested Group Failing.Nested GROUP Failing
+
+Total elapsed:  0s.

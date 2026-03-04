@@ -1,0 +1,76 @@
+SUITE: For Continue
+═══════════════════
+TEST: For Continue.FOR CONTINUE
+═══════════════════════════════
+▶ FOR    ${i}    IN RANGE    5
+  ▶ ITERATION    ${i} = 0
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 0
+      ✓ PASS     0s
+    ▶ IF    ${i} < 3
+      ▶ CONTINUE
+        ✓ PASS     0s
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + ${i}')
+      ⊘ NOT RUN     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${{$i * 2}}')
+      ⊘ NOT RUN     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 1
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 1
+      ✓ PASS     0s
+    ▶ IF    ${i} < 3
+      ▶ CONTINUE
+        ✓ PASS     0s
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + ${i}')
+      ⊘ NOT RUN     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${{$i * 2}}')
+      ⊘ NOT RUN     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 2
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 2
+      ✓ PASS     0s
+    ▶ IF    ${i} < 3
+      ▶ CONTINUE
+        ✓ PASS     0s
+      ✓ PASS     0s
+    ▶ BuiltIn.Evaluate('${i} + ${i}')
+      ⊘ NOT RUN     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${{$i * 2}}')
+      ⊘ NOT RUN     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 3
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 3
+      ✓ PASS     0s
+    ▶ IF    ${i} < 3
+      ▶ CONTINUE
+        ⊘ NOT RUN     0s
+      ⊘ NOT RUN     0s
+    ▶ BuiltIn.Evaluate('${i} + ${i}')
+      I ${result} = 6
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${{$i * 2}}')
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ ITERATION    ${i} = 4
+    ▶ BuiltIn.Log('Iteration ${i}')
+      I Iteration 4
+      ✓ PASS     0s
+    ▶ IF    ${i} < 3
+      ▶ CONTINUE
+        ⊘ NOT RUN     0s
+      ⊘ NOT RUN     0s
+    ▶ BuiltIn.Evaluate('${i} + ${i}')
+      I ${result} = 8
+      ✓ PASS     0s
+    ▶ BuiltIn.Should Be Equal As Numbers('${result}', '${{$i * 2}}')
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

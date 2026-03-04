@@ -1,0 +1,15 @@
+TEST FAILED: Var Failing.VAR Failing
+════════════════════════════════════
+▶ VAR    @{l}    0    1    2
+  I @{l} = [ 0 | 1 | 2 ]
+  ✓ PASS     0s
+▶ VAR    ${e}    ${l}[3]
+  F Setting variable '${e}' failed: List '${l}' has no item in index 3.
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Var Failing.VAR Failing
+
+Total elapsed:  0s.

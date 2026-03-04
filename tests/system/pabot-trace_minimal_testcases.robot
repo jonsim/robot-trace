@@ -25,6 +25,16 @@ for_failing                                     for_failing
 for_failing (verbose)                           for_failing                         mode=verbose
 for_passing                                     for_passing
 for_passing (verbose)                           for_passing                         mode=verbose
+for_multiple_assignment                         for_multiple_assignment
+for_multiple_assignment (verbose)               for_multiple_assignment             mode=verbose
+for_continue                                    for_continue
+for_continue (verbose)                          for_continue                        mode=verbose
+for_break                                       for_break
+for_break (verbose)                             for_break                           mode=verbose
+group_failing                                   group_failing
+group_failing (verbose)                         group_failing                       mode=verbose
+group_passing                                   group_passing
+group_passing (verbose)                         group_passing                       mode=verbose
 if_else_failing                                 if_else_failing
 if_else_failing (verbose)                       if_else_failing                     mode=verbose
 if_else_passing                                 if_else_passing
@@ -45,6 +55,10 @@ multiple_2failing                               multiple_2failing
 multiple_2failing (verbose)                     multiple_2failing                   mode=verbose
 multiple_passing                                multiple_passing
 multiple_passing (verbose)                      multiple_passing                    mode=verbose
+nested_group_failing                            nested_group_failing
+nested_group_failing (verbose)                  nested_group_failing                mode=verbose
+nested_group_passing                            nested_group_passing
+nested_group_passing (verbose)                  nested_group_passing                mode=verbose
 nested_keywords_1                               nested_keywords_1
 nested_keywords_1 (verbose)                     nested_keywords_1                   mode=verbose
 nested_keywords_2                               nested_keywords_2
@@ -57,6 +71,8 @@ run_keywords_failing                            run_keywords_failing
 run_keywords_failing (verbose)                  run_keywords_failing                mode=verbose
 run_keywords_passing                            run_keywords_passing
 run_keywords_passing (verbose)                  run_keywords_passing                mode=verbose
+return_multiple_assignment                      return_multiple_assignment
+return_multiple_assignment (verbose)            return_multiple_assignment          mode=verbose
 run_process                                     run_process                         --tracesubprocesses
 run_process (verbose)                           run_process                         --tracesubprocesses     mode=verbose
 suite_setup_failing                             suite_setup_failing
@@ -91,6 +107,14 @@ try_catch_exception                             try_catch_exception
 try_catch_exception (verbose)                   try_catch_exception                 mode=verbose
 try_catch_passing                               try_catch_passing
 try_catch_passing (verbose)                     try_catch_passing                   mode=verbose
+var_passing                                     var_passing
+var_passing (verbose)                           var_passing                         mode=verbose
+var_failing                                     var_failing
+var_failing (verbose)                           var_failing                         mode=verbose
+while_failing                                   while_failing
+while_failing (verbose)                         while_failing                       mode=verbose
+while_passing                                   while_passing
+while_passing (verbose)                         while_passing                       mode=verbose
 
 
 *** Keywords ***
