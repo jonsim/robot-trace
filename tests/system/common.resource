@@ -1,5 +1,6 @@
 *** Settings ***
 Documentation    Common keywords to run the command line tool system tests.
+Library     Collections
 Library     OperatingSystem
 Library     Process
 Library     String
@@ -9,8 +10,12 @@ Library     String
 Run Process Check Output
     [Documentation]    Runs a process with the given command and arguments,
     ...    checks for successful execution and returns the result object.
-    [Arguments]    @{cmd}    ${expected_rc}=0
-    ${res} =    Run Process    @{cmd}
+    [Arguments]    @{cmd}    ${expected_rc}=0    ${env_extra}=${None}
+    &{env} =    Get Environment Variables
+    IF    ${env_extra} is not None
+        VAR    &{env}    &{env}    &{env_extra}
+    END
+    ${res} =    Run Process    @{cmd}    env=${env}
     IF    ${res.rc} != ${expected_rc}
         ${cmdline} =    Join Command Line    @{cmd}
         ${error} =    Set Variable

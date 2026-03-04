@@ -46,7 +46,7 @@ indent-style = "space"
 [tool.robocop.lint]
 # In order to support older RobotFramework versions we deliberately use
 # deprecated keywords (in this case, VAR).
-ignore = ["VAR05", "DEPR05"]
+ignore = ["VAR05", "DEPR05", "LEN27"]
 configure = [
     "too-many-calls-in-keyword.max_calls=30",
     "too-long-keyword.max_len=80",
