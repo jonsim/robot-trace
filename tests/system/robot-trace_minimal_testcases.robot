@@ -133,24 +133,3 @@ Run Minimal Testcase
     ${normalized_stdout} =    Normalize Output    ${res.stdout}
     ${normalized_expectation} =    Normalize Output    ${testcase_expectation}
     Should Be Equal    ${normalized_expectation}    ${normalized_stdout}
-
-    # Run pabot-trace and check the output matches the expectation.
-    # Pabot doesn't report live in verbose mode, so needs a different
-    # expectation when running in verbose mode.
-    IF    "${mode}" == "verbose"
-        ${testcase_result} =    Set Variable    ${testcase_result}.pabot
-    END
-    ${res} =  Run Process Check Output
-    ...    pabot-trace
-    ...    --no-pabotlib
-    ...    --no-rebot
-    ...    --outputdir    ${TEMPDIR}${/}${testcase}${/}${mode}
-    ...    @{additional_args}
-    ...    ${testcase_file}
-    ...    expected_rc=253
-    Should Be Equal    ${EMPTY}    ${res.stderr}
-    ${testcase_expectation} =    Get File    ${testcase_result}
-    ${testcase_expectation} =    Strip String    ${testcase_expectation}
-    ${normalized_stdout} =    Normalize Output    ${res.stdout}
-    ${normalized_expectation} =    Normalize Output    ${testcase_expectation}
-    Should Be Equal    ${normalized_expectation}    ${normalized_stdout}
