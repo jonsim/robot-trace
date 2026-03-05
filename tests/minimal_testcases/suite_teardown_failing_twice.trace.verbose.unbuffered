@@ -1,0 +1,25 @@
+SUITE: Suite Teardown Failing Twice
+═══════════════════════════════════
+TEST: Suite Teardown Failing Twice.Test Case 1
+══════════════════════════════════════════════
+▶ BuiltIn.Log('In Test Case 1')
+  I In Test Case 1
+  ✓ PASS     0s
+▶ BuiltIn.Fail('The testcase failed')
+  F The testcase failed
+  ✗ FAIL     0s
+
+▶ TEARDOWN    Do Suite Teardown()
+  ▶ BuiltIn.Log('Doing suite teardown')
+    I Doing suite teardown
+    ✓ PASS     0s
+  ▶ BuiltIn.Fail('The suite teardown also failed')
+    F The suite teardown also failed
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Suite Teardown Failing Twice.Test Case 1
+
+Total elapsed:  0s.

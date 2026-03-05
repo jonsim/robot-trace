@@ -19,7 +19,7 @@ Run Process Check Output
     IF    ${res.rc} != ${expected_rc}
         ${cmdline} =    Join Command Line    @{cmd}
         ${error} =    Set Variable
-        ...    Process failed with return code ${res.rc}
+        ...    Process failed with return code ${res.rc} (expecting ${expected_rc})
         ...    \n\nCommand:\n${cmdline}
         ...    \n\nStandard Output:\n${res.stdout}
         ...    \n\nStandard Error:\n${res.stderr}

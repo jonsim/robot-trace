@@ -119,9 +119,15 @@ suite_setup_warning (buffered)                  suite_setup_warning             
 suite_teardown_failing                          suite_teardown_failing
 suite_teardown_failing (verbose)                suite_teardown_failing              mode=verbose
 suite_teardown_failing (buffered)               suite_teardown_failing              mode=buffered
+suite_teardown_failing_skipping                 suite_teardown_failing_skipping     expected_rc=0
+suite_teardown_failing_skipping (verbose)       suite_teardown_failing_skipping     mode=verbose            expected_rc=0
+suite_teardown_failing_skipping (buffered)      suite_teardown_failing_skipping     mode=buffered           expected_rc=0
 suite_teardown_failing_testcase                 suite_teardown_failing_testcase
 suite_teardown_failing_testcase (verbose)       suite_teardown_failing_testcase     mode=verbose
 suite_teardown_failing_testcase (buffered)      suite_teardown_failing_testcase     mode=buffered
+suite_teardown_failing_twice                    suite_teardown_failing_twice
+suite_teardown_failing_twice (verbose)          suite_teardown_failing_twice        mode=verbose
+suite_teardown_failing_twice (buffered)         suite_teardown_failing_twice        mode=buffered
 suite_teardown_passing                          suite_teardown_passing
 suite_teardown_passing (verbose)                suite_teardown_passing              mode=verbose
 suite_teardown_passing (buffered)               suite_teardown_passing              mode=buffered
@@ -170,7 +176,7 @@ while_passing (buffered)                        while_passing                   
 Run Minimal Testcase
     [Documentation]    Runs one of the minimal testcases and checks that the
     ...    output matches.
-    [Arguments]    ${testcase}    @{additional_args}    ${mode}=normal    ${expected_rc}=0
+    [Arguments]    ${testcase}    @{additional_args}    ${mode}=normal    ${expected_rc}=${None}
     # Compute the testcase file and expected result file.
     VAR    ${testcase_file}    ${TESTCASE_DIR}${/}${testcase}.robot
     VAR    ${testcase_result}    ${TESTCASE_DIR}${/}${testcase}.trace
@@ -186,9 +192,13 @@ Run Minimal Testcase
     ELSE
         VAR    ${testcase_result}    ${testcase_result}.normal
     END
-    IF    "failing" in "${testcase}" and ${expected_rc} == 0
-        ${match} =    Evaluate    re.search(r"(\\d+)failing", "${testcase}")
-        ${expected_rc} =    Set Variable    ${{$match.group(1) if $match else 1}}
+    IF    ${expected_rc} is None
+        IF    "failing" in "${testcase}"
+            ${match} =    Evaluate    re.search(r"(\\d+)failing", "${testcase}")
+            ${expected_rc} =    Set Variable    ${{$match.group(1) if $match else 1}}
+        ELSE
+            ${expected_rc} =    Set Variable    0
+        END
     END
     File Should Exist    ${testcase_file}
     File Should Exist    ${testcase_result}

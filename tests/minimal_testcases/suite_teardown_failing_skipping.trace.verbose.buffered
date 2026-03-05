@@ -1,0 +1,22 @@
+TEST SKIPPED: Suite Teardown Failing Skipping.Test Case 1
+═════════════════════════════════════════════════════════
+▶ BuiltIn.Log('In Test Case 1')
+  I In Test Case 1
+  ✓ PASS     0s
+▶ BuiltIn.Skip('Skip the testcase')
+  S Skip the testcase
+  → SKIP     0s
+
+SUITE SKIPPED: Suite Teardown Failing Skipping
+══════════════════════════════════════════════
+▶ TEARDOWN    Do Suite Teardown()
+  ▶ BuiltIn.Log('Doing suite teardown')
+    I Doing suite teardown
+    ✓ PASS     0s
+  ▶ BuiltIn.Fail('But then fail the suite teardown')
+    F But then fail the suite teardown
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 1 skipped, 0 failed).
+Total elapsed:  0s.
