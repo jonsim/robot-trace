@@ -58,51 +58,20 @@ from robot_trace.RobotTrace import (
 )
 
 
-class ResultTestTimings(TestTimings):
-    def _record_run_start(self, starttime: datetime):
-        if self.run_start_time is None:
-            self.run_start_time = starttime.timestamp()
+class ResultVisitorListenerAdapter(ResultVisitor):
+    """Adapter to convert Robot's ResultVisitor interface to the Listener API"""
 
-    def start_suite(self, starttime: datetime):
-        self._record_run_start(starttime)
-
-    def end_suite(self, endtime: datetime):
-        pass
-
-    def start_test(self, starttime: datetime):
-        self._record_run_start(starttime)
-        self.current_test_start_time = starttime.timestamp()
-
-    def end_test(self, endtime: datetime):
-        self.current_test_start_time = None
-
-
-class RobotTraceResultVisitor(ResultVisitor):
-    def __init__(self, args: RobotTraceArgs):
-        self.args = args
-        self.stats = TestStatistics()
-        self.timings = ResultTestTimings()
-        self.result_printer = BufferedTracePrinter(
-            print_passed=args.print_passed,
-            print_skipped=args.print_skipped,
-            print_warned=args.print_warned,
-            print_errored=args.print_errored,
-            print_failed=args.print_failed,
-            colors=args.colors,
-            width=args.width,
-            print_callback=print,
-        )
-        self.in_test = False
+    def __init__(self, listener):
+        self.listener = listener
 
     def start_suite(self, suite):
         name = suite.name
         attributes = {
             "longname": suite.full_name,
             "totaltests": suite.test_count,
+            "starttime": suite.start_time,
         }
-        self.stats.start_suite(name, attributes)
-        self.timings.start_suite(suite.start_time)
-        self.result_printer.start_suite(name, attributes)
+        self.listener.start_suite(name, attributes)
 
     def end_suite(self, suite):
         name = suite.name
@@ -112,18 +81,17 @@ class RobotTraceResultVisitor(ResultVisitor):
             "status": suite.status,
             "message": suite.message,
             "elapsedtime": suite.elapsedtime,
+            "endtime": suite.end_time,
         }
-        self.stats.end_suite(name, attributes)
-        self.timings.end_suite(suite.end_time)
-        self.result_printer.end_suite(name, attributes)
+        self.listener.end_suite(name, attributes)
 
     def start_test(self, test):
         name = test.name
-        attributes = {"longname": test.full_name}
-        self.in_test = True
-        self.stats.start_test(name, attributes)
-        self.timings.start_test(test.start_time)
-        self.result_printer.start_test(name, attributes)
+        attributes = {
+            "longname": test.full_name,
+            "starttime": test.start_time,
+        }
+        self.listener.start_test(name, attributes)
 
     def end_test(self, test):
         # If the test passed, but the suite teardown failed, the ResultVisitor
@@ -144,28 +112,12 @@ class RobotTraceResultVisitor(ResultVisitor):
             "status": status,
             "message": test.message,
             "elapsedtime": test.elapsedtime,
+            "endtime": test.end_time,
         }
-        self.in_test = False
-        self.stats.end_test(name, attributes)
-        self.timings.end_test(test.end_time)
-        self.result_printer.end_test(name, attributes)
-
-    def _start_keyword(self, name, attributes):
-        self.result_printer.start_keyword(self.in_test, name, attributes)
-
-    def _end_keyword(self, name, attributes):
-        self.result_printer.end_keyword(self.in_test, name, attributes)
+        self.listener.end_test(name, attributes)
 
     def start_message(self, message):
-        attributes = {
-            "level": message.level,
-            "message": message.message,
-        }
-        self.result_printer.log_message(self.in_test, attributes)
-        if message.level == "ERROR":
-            self.stats.log_error(message.message)
-        elif message.level == "WARN":
-            self.stats.log_warning(message.message)
+        self.listener.log_message(message)
 
     def visit_errors(self, errors):
         # Don't visit ResultVisitor.visit_errors - we see them as we
@@ -173,20 +125,8 @@ class RobotTraceResultVisitor(ResultVisitor):
         pass
 
     def end_result(self, result):
-        if self.args.verbosity >= Verbosity.QUIET:
-            print("RUN COMPLETE: " + self.stats.format_run_summary())
-        if self.args.verbosity >= Verbosity.NORMAL:
-            run_results = self.stats.format_run_results()
-            if run_results:
-                print("\n" + run_results)
-
-        if (
-            self.timings.run_start_time is not None
-            and self.args.verbosity >= Verbosity.NORMAL
-        ):
-            elapsed_time = result.suite.elapsed_time.total_seconds()
-            elapsed_str = self.timings.format_time(elapsed_time)
-            print(f"Total elapsed: {elapsed_str}.")
+        elapsed_time = result.suite.elapsed_time.total_seconds()
+        self.listener.end_result(elapsed_time)
 
     # ============================================================
     # GENERIC BODY ITEM ROUTING
@@ -194,11 +134,11 @@ class RobotTraceResultVisitor(ResultVisitor):
 
     def _start_body_item(self, node):
         name, attrs = self._node_to_listener_keyword(node, is_end=False)
-        self._start_keyword(name, attrs)
+        self.listener.start_keyword(name, attrs)
 
     def _end_body_item(self, node):
         name, attrs = self._node_to_listener_keyword(node, is_end=True)
-        self._end_keyword(name, attrs)
+        self.listener.end_keyword(name, attrs)
 
     # ============================================================
     # KEYWORD
@@ -498,6 +438,101 @@ class RobotTraceResultVisitor(ResultVisitor):
         return name, attrs
 
 
+class ResultTestTimings(TestTimings):
+    def _record_run_start(self, starttime: datetime):
+        if self.run_start_time is None:
+            self.run_start_time = starttime.timestamp()
+
+    def start_suite(self, starttime: datetime):
+        self._record_run_start(starttime)
+
+    def end_suite(self, endtime: datetime):
+        pass
+
+    def start_test(self, starttime: datetime):
+        self._record_run_start(starttime)
+        self.current_test_start_time = starttime.timestamp()
+
+    def end_test(self, endtime: datetime):
+        self.current_test_start_time = None
+
+
+class RebotTrace:
+    def __init__(self, args: RobotTraceArgs):
+        self.args = args
+        self.stats = TestStatistics()
+        self.timings = ResultTestTimings()
+        self.result_printer = BufferedTracePrinter(
+            print_passed=args.print_passed,
+            print_skipped=args.print_skipped,
+            print_warned=args.print_warned,
+            print_errored=args.print_errored,
+            print_failed=args.print_failed,
+            colors=args.colors,
+            width=args.width,
+            print_callback=print,
+        )
+        self.in_test = False
+
+    def start_suite(self, name, attributes):
+        self.stats.start_suite(name, attributes)
+        if "starttime" in attributes:
+            self.timings.start_suite(attributes["starttime"])
+        self.result_printer.start_suite(name, attributes)
+
+    def end_suite(self, name, attributes):
+        self.stats.end_suite(name, attributes)
+        if "endtime" in attributes:
+            self.timings.end_suite(attributes["endtime"])
+        self.result_printer.end_suite(name, attributes)
+
+    def start_test(self, name, attributes):
+        self.in_test = True
+        self.stats.start_test(name, attributes)
+        if "starttime" in attributes:
+            self.timings.start_test(attributes["starttime"])
+        self.result_printer.start_test(name, attributes)
+
+    def end_test(self, name, attributes):
+        self.in_test = False
+        self.stats.end_test(name, attributes)
+        if "endtime" in attributes:
+            self.timings.end_test(attributes["endtime"])
+        self.result_printer.end_test(name, attributes)
+
+    def start_keyword(self, name, attributes):
+        self.result_printer.start_keyword(self.in_test, name, attributes)
+
+    def end_keyword(self, name, attributes):
+        self.result_printer.end_keyword(self.in_test, name, attributes)
+
+    def log_message(self, message):
+        attributes = {
+            "level": message.level,
+            "message": message.message,
+        }
+        self.result_printer.log_message(self.in_test, attributes)
+        if message.level == "ERROR":
+            self.stats.log_error(message.message)
+        elif message.level == "WARN":
+            self.stats.log_warning(message.message)
+
+    def end_result(self, elapsed_time):
+        if self.args.verbosity >= Verbosity.QUIET:
+            print("RUN COMPLETE: " + self.stats.format_run_summary())
+        if self.args.verbosity >= Verbosity.NORMAL:
+            run_results = self.stats.format_run_results()
+            if run_results:
+                print("\n" + run_results)
+
+        if (
+            self.timings.run_start_time is not None
+            and self.args.verbosity >= Verbosity.NORMAL
+        ):
+            elapsed_str = self.timings.format_time(elapsed_time)
+            print(f"Total elapsed: {elapsed_str}.")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Example CLI with quiet/verbose flags and output file."
@@ -530,7 +565,8 @@ def main():
     )
 
     result = ExecutionResult(args.output)
-    result.visit(RobotTraceResultVisitor(robot_trace_args))
+    listener = RebotTrace(robot_trace_args)
+    result.visit(ResultVisitorListenerAdapter(listener))
 
 
 if __name__ == "__main__":
