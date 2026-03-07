@@ -41,9 +41,8 @@ if_else_passing                                 if_else_passing
 if_else_passing (verbose)                       if_else_passing                     mode=verbose
 invalid_syntax                                  invalid_syntax
 invalid_syntax (verbose)                        invalid_syntax                      mode=verbose
-# These two can probably never work.
-# log_console                                     log_console
-# log_console (verbose)                           log_console                         mode=verbose
+log_console                                     log_console
+log_console (verbose)                           log_console                         mode=verbose
 log_debug                                       log_debug                           -LDEBUG
 log_debug (verbose)                             log_debug                           -LDEBUG         mode=verbose
 log_error                                       log_error

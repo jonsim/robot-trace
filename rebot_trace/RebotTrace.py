@@ -500,7 +500,27 @@ class RebotTrace:
         self.result_printer.end_test(name, attributes)
 
     def start_keyword(self, name, attributes):
+        def _get_arg(arg_name, arg_default):
+            arg_value = arg_default
+            for arg in attributes["args"]:
+                if arg.startswith(f"{arg_name}="):
+                    arg_value = arg.split("=")[1]
+            return arg_value
+
         self.result_printer.start_keyword(self.in_test, name, attributes)
+        if name == "BuiltIn.Log To Console":
+            message = attributes["args"][0]
+            logged_stream = _get_arg("stream", "stdout")
+            self.result_printer.log_message_to_console(
+                self.in_test, message, logged_stream
+            )
+        elif name == "BuiltIn.Log":
+            message = attributes["args"][0]
+            level = _get_arg("level", "INFO")
+            if level == "CONSOLE":
+                self.result_printer.log_message_to_console(
+                    self.in_test, message, "stdout"
+                )
 
     def end_keyword(self, name, attributes):
         self.result_printer.end_keyword(self.in_test, name, attributes)
@@ -515,6 +535,10 @@ class RebotTrace:
             self.stats.log_error(message.message)
         elif message.level == "WARN":
             self.stats.log_warning(message.message)
+        elif message.level == "CONSOLE":
+            self.result_printer.log_message_to_console(
+                self.in_test, message.message, "stdout"
+            )
 
     def end_result(self, elapsed_time):
         if self.args.verbosity >= Verbosity.QUIET:

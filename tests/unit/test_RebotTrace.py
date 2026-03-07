@@ -95,8 +95,36 @@ class TestRebotTrace(unittest.TestCase):
         self.trace.result_printer.end_test.assert_called_once()
 
     def test_start_keyword(self):
-        self.trace.start_keyword("Kw 1", {})
+        self.trace.start_keyword("Kw 1", {"args": []})
         self.trace.result_printer.start_keyword.assert_called_once()
+
+    def test_start_keyword_log_to_console_default_stream(self):
+        self.trace.start_keyword("BuiltIn.Log To Console", {"args": ["Hello world"]})
+        self.trace.result_printer.log_message_to_console.assert_called_once_with(
+            False, "Hello world", "stdout"
+        )
+
+    def test_start_keyword_log_to_console_stderr(self):
+        self.trace.start_keyword(
+            "BuiltIn.Log To Console", {"args": ["Error message", "stream=stderr"]}
+        )
+        self.trace.result_printer.log_message_to_console.assert_called_once_with(
+            False, "Error message", "stderr"
+        )
+
+    def test_start_keyword_log_level_console(self):
+        self.trace.start_keyword(
+            "BuiltIn.Log", {"args": ["Some message", "level=CONSOLE"]}
+        )
+        self.trace.result_printer.log_message_to_console.assert_called_once_with(
+            False, "Some message", "stdout"
+        )
+
+    def test_start_keyword_log_level_info(self):
+        self.trace.start_keyword(
+            "BuiltIn.Log", {"args": ["Some message", "level=CONSOLE", "level=INFO"]}
+        )
+        self.trace.result_printer.log_message_to_console.assert_not_called()
 
     def test_end_keyword(self):
         self.trace.end_keyword("Kw 1", {})
@@ -135,6 +163,21 @@ class TestRebotTrace(unittest.TestCase):
         self.trace.log_message(MockMessage())
         self.trace.result_printer.log_message.assert_called_once_with(False, msg_attrs)
         self.trace.stats.log_error.assert_called_once_with("msg")
+
+    def test_log_message_console(self):
+        msg_attrs = {"level": "CONSOLE", "message": "msg"}
+
+        class MockMessage:
+            level = "CONSOLE"
+            message = "msg"
+
+        self.trace.log_message(MockMessage())
+        self.trace.result_printer.log_message.assert_called_once_with(False, msg_attrs)
+        self.trace.result_printer.log_message_to_console.assert_called_once_with(
+            False, "msg", "stdout"
+        )
+        self.trace.stats.log_error.assert_not_called()
+        self.trace.stats.log_warning.assert_not_called()
 
     @patch("builtins.print")
     def test_end_result(self, mock_print):

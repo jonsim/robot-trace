@@ -190,10 +190,8 @@ rebot-trace path/to/output.xml
   not printed (matching `robot-trace` behavior).
 
 The traces output are identical to those output by `robot-trace` and
-`pabot-trace`, with the following exceptions:
-- Any messages logged to the console are not output.
-- The `--trace-subprocesses` argument is unsupported.
-
+`pabot-trace` (assuming they do not include unsupported arguments such as
+`--trace-subprocesses`).
 
 ### Example Output
 ![](https://raw.githubusercontent.com/jonsim/robot-trace/main/rebot_trace_demo.gif)
