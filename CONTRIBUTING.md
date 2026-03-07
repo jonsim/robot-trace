@@ -76,12 +76,13 @@ To release a new version of the project, follow these steps:
 ### 1. Update the version number
 Update the version number in:
 - `pyproject.toml`
+- `src/rebot_trace/__init__.py`
 - `src/robot_trace/__init__.py`
 - `src/pabot_trace/__init__.py`
 
 ### 2. Commit the version change
 ```sh
-git add pyproject.toml src/robot_trace/__init__.py src/pabot_trace/__init__.py
+git add pyproject.toml src/rebot_trace/__init__.py src/robot_trace/__init__.py src/pabot_trace/__init__.py
 git commit -m "Bump version to X.Y.Z"
 ```
 
