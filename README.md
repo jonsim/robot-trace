@@ -12,6 +12,8 @@ and intuitive a format as possible.
 - Provides a new `pabot-trace` front-end, which is a drop-in replacement for
   `pabot` (if you have it installed - there is no need to install this package
   if you don't).
+- Provides a new `rebot-trace` command, which can be used to generate matching
+  traces from an output.xml file.
 - Displays test execution progress in the CLI.
 - Provides a clear and concise overview of running tests.
 - Provides a full, intuitive trace of any failing tests.
@@ -123,6 +125,11 @@ You may also consider calling `robot` or `robot-trace` with:
 - `--maxassignlength=10000` to avoid truncating all but the longest variables.
 
 
+### Example Output
+![](https://raw.githubusercontent.com/jonsim/robot-trace/main/robot_trace_demo.gif)
+
+
+
 ## Pabot Usage
 For `pabot`, due to the complexity of the tool and the lack of comprehensive
 API entrypoints, the listener supports a single usage model:
@@ -152,12 +159,46 @@ All arguments match those of `robot-trace` - see the [Robot Usage](#robot-usage)
 section for details.
 
 
-## Example Output
-### Robot
-![](https://raw.githubusercontent.com/jonsim/robot-trace/main/robot_trace_demo.gif)
-
-### Pabot
+### Example Output
 ![](https://raw.githubusercontent.com/jonsim/robot-trace/main/pabot_trace_demo.gif)
+
+
+
+## Rebot Usage
+A separate `rebot-trace` application is also provided. Despite its name, it is
+not a wrapper around `rebot`, but rather a separate application that can be used
+to process Robot Framework result files (in a similar manner to `rebot`). Thus
+there is a single usage model:
+
+### As a separate command-line tool
+#### Installation
+```sh
+pip install robotframework-trace
+```
+
+#### Usage
+```sh
+rebot-trace path/to/output.xml
+```
+
+#### Details
+`rebot-trace` supports the following command line arguments:
+- `--verbose`: Sets the listener verbosity to `DEBUG` verbosity. Traces from all
+  tests are printed (matching `robot-trace` behavior).
+- `--quiet`: Sets the listener verbosity to `QUIET` verbosity. Only traces from
+  failing tests are printed. Passing tests that raise warnings or errors are
+  not printed (matching `robot-trace` behavior).
+
+The traces output are identical to those output by `robot-trace` and
+`pabot-trace`, with the following exceptions:
+- Any messages logged to the console are not output.
+- The `--trace-subprocesses` argument is unsupported.
+
+
+### Example Output
+![](https://raw.githubusercontent.com/jonsim/robot-trace/main/rebot_trace_demo.gif)
+
+
 
 ### Redirected Output
 You can also redirect the output to a file to get the same output without the
