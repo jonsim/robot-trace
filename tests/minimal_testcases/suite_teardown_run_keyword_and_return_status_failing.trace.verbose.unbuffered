@@ -1,0 +1,33 @@
+SUITE: Suite Teardown Run Keyword And Return Status Failing
+═══════════════════════════════════════════════════════════
+TEST: Suite Teardown Run Keyword And Return Status Failing.Failing Test Case
+════════════════════════════════════════════════════════════════════════════
+▶ BuiltIn.Fail('Always fails')
+  F Always fails
+  ✗ FAIL     0s
+
+▶ TEARDOWN    Do Suite Teardown()
+  ▶ BuiltIn.Run Keyword And Return Status('Should Be Equal', '1', '1')
+    ▶ BuiltIn.Should Be Equal('1', '1')
+      ✓ PASS     0s
+    I ${status} = True
+    ✓ PASS     0s
+  ▶ BuiltIn.Log('Returned status: ${status}')
+    I Returned status: True
+    ✓ PASS     0s
+  ▶ BuiltIn.Run Keyword And Return Status('Should Be Equal', '1', '2')
+    ▶ BuiltIn.Should Be Equal('1', '2')
+      F 1 != 2
+      ✗ FAIL     0s
+    I ${status} = False
+    ✓ PASS     0s
+  ▶ BuiltIn.Log('Returned status: ${status}')
+    I Returned status: False
+    ✓ PASS     0s
+  ✓ PASS     0s
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Suite Teardown Run Keyword And Return Status Failing.Failing Test Case
+
+Total elapsed:  0s.

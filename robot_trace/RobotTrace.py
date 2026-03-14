@@ -190,7 +190,6 @@ class TraceStack:
         self._stack: list[str] = []
         self.has_warnings: bool = False
         self.has_errors: bool = False
-        self.has_failures: bool = False
 
     def reset(self, name: str):
         """
@@ -202,7 +201,6 @@ class TraceStack:
         self._stack.clear()
         self.has_warnings = False
         self.has_errors = False
-        self.has_failures = False
 
     @property
     def _indent(self) -> str:
@@ -388,7 +386,14 @@ class BufferedTracePrinter(TracePrinter):
             should_print = self.print_passed
             status_text = "SUITE " + _past_tense(status)
             status_color = None
-            if self.suite_trace_stack.has_failures:
+            # Unfortunately there's no nice way of knowing if the suite failed
+            # because one of its tests failed, or because of a suite setup or
+            # teardown failure. So we fudge it and infer from the message.
+            suite_setup_failed = attributes["message"].startswith("Suite setup failed:")
+            suite_teardown_failed = attributes["message"].startswith(
+                "Suite teardown failed:"
+            )
+            if suite_setup_failed or suite_teardown_failed:
                 should_print |= self.print_failed
                 status_color = ANSI.Fore.RED
             if self.suite_trace_stack.has_errors:
@@ -475,8 +480,6 @@ class BufferedTracePrinter(TracePrinter):
             stack.has_errors = True
         elif level == "WARN":
             stack.has_warnings = True
-        elif level == "FAIL":
-            stack.has_failures = True
 
         lines = self._format_log_message(level, text)
         stack.append_trace("\n".join(lines))

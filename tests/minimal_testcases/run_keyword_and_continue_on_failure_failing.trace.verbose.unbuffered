@@ -1,0 +1,22 @@
+SUITE: Run Keyword And Continue On Failure Failing
+══════════════════════════════════════════════════
+TEST: Run Keyword And Continue On Failure Failing.Test That Calls Run Keyword And Continue On Failure
+═════════════════════════════════════════════════════════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the testcase')
+  I Starting the testcase
+  ✓ PASS     0s
+▶ BuiltIn.Run Keyword And Continue On Failure('Fail', 'Always fails')
+  ▶ BuiltIn.Fail('Always fails')
+    F Always fails
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+▶ BuiltIn.Log('Finishing the testcase')
+  I Finishing the testcase
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Run Keyword And Continue On Failure Failing.Test That Calls Run Keyword And Continue On Failure
+
+Total elapsed:  0s.

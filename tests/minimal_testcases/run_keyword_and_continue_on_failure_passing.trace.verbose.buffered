@@ -1,0 +1,15 @@
+TEST PASSED: Run Keyword And Continue On Failure Passing.Test That Calls Run Keyword And Continue On Failure
+════════════════════════════════════════════════════════════════════════════════════════════════════════════
+▶ BuiltIn.Log('Starting the testcase')
+  I Starting the testcase
+  ✓ PASS     0s
+▶ BuiltIn.Run Keyword And Continue On Failure('Should Be Equal', '1', '1')
+  ▶ BuiltIn.Should Be Equal('1', '1')
+    ✓ PASS     0s
+  ✓ PASS     0s
+▶ BuiltIn.Log('Finishing the testcase')
+  I Finishing the testcase
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

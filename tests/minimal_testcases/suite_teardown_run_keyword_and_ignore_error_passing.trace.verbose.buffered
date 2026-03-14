@@ -1,0 +1,22 @@
+TEST PASSED: Suite Teardown Run Keyword And Ignore Error Passing.Passing Test Case
+══════════════════════════════════════════════════════════════════════════════════
+▶ BuiltIn.Log('Simple test case')
+  I Simple test case
+  ✓ PASS     0s
+
+SUITE PASSED: Suite Teardown Run Keyword And Ignore Error Passing
+═════════════════════════════════════════════════════════════════
+▶ TEARDOWN    Do Suite Teardown()
+  ▶ BuiltIn.Run Keyword And Ignore Error('Should Be Equal', '1', '1')
+    ▶ BuiltIn.Should Be Equal('1', '1')
+      ✓ PASS     0s
+    ✓ PASS     0s
+  ▶ BuiltIn.Run Keyword And Ignore Error('Should Be Equal', '1', '2')
+    ▶ BuiltIn.Should Be Equal('1', '2')
+      F 1 != 2
+      ✗ FAIL     0s
+    ✓ PASS     0s
+  ✓ PASS     0s
+
+RUN COMPLETE: 1 test, 1 completed (1 passed, 0 skipped, 0 failed).
+Total elapsed:  0s.

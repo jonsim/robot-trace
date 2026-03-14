@@ -1,0 +1,21 @@
+TEST FAILED: Suite Setup Run Keyword And Continue On Failure Failing.Empty Test Case
+════════════════════════════════════════════════════════════════════════════════════
+Parent suite setup failed:
+1 != 2
+
+SUITE FAILED: Suite Setup Run Keyword And Continue On Failure Failing
+═════════════════════════════════════════════════════════════════════
+▶ SETUP    Do Suite Setup()
+  ▶ BuiltIn.Run Keyword And Continue On Failure('Should Be Equal', '1', '2')
+    ▶ BuiltIn.Should Be Equal('1', '2')
+      F 1 != 2
+      ✗ FAIL     0s
+    ✗ FAIL     0s
+  ✗ FAIL     0s
+
+RUN COMPLETE: 1 test, 1 completed (0 passed, 0 skipped, 1 failed).
+
+Failing test:
+- Suite Setup Run Keyword And Continue On Failure Failing.Empty Test Case
+
+Total elapsed:  0s.
