@@ -1005,20 +1005,67 @@ class PopenWrapper:
         self._stderr_callback = stderr_callback
 
     def __call__(self, *args, **kwargs):
+        stdout_stream = self._get_stream(args, kwargs, "stdout", 4)
+        stderr_stream = self._get_stream(args, kwargs, "stderr", 5)
+        stdout_redirect = self._get_redirect(stdout_stream)
+        stderr_redirect = self._get_redirect(stderr_stream)
+
         ret = self._real_popen(*args, **kwargs)
 
         real_communicate = ret.communicate
 
         def wrapped_communicate(*args, **kwargs):
             stdout, stderr = real_communicate(*args, **kwargs)
-            if stdout:
-                self._stdout_callback(stdout.decode("utf-8"))
-            if stderr:
-                self._stderr_callback(stderr.decode("utf-8"))
+            captured_stdout = stdout or self._read_redirect(stdout_redirect)
+            if captured_stdout:
+                self._stdout_callback(captured_stdout.decode("utf-8"))
+
+            # Robot uses the stdout stream itself for stderr=STDOUT when stdout
+            # is a file. Reading it again would report the combined output twice.
+            captured_stderr = stderr
+            if captured_stderr is None and stderr_stream is not stdout_stream:
+                captured_stderr = self._read_redirect(stderr_redirect)
+            if captured_stderr:
+                self._stderr_callback(captured_stderr.decode("utf-8"))
             return stdout, stderr
 
         ret.communicate = wrapped_communicate
         return ret
+
+    @staticmethod
+    def _get_stream(args, kwargs, name, position):
+        if name in kwargs:
+            return kwargs[name]
+        if len(args) > position:
+            return args[position]
+        return None
+
+    @staticmethod
+    def _get_redirect(stream):
+        if stream is None or stream in (
+            subprocess.PIPE,
+            subprocess.STDOUT,
+            subprocess.DEVNULL,
+        ):
+            return None
+        try:
+            path = os.fspath(stream.name)
+            offset = stream.tell()
+        except (AttributeError, OSError, TypeError):
+            return None
+        return path, offset
+
+    @staticmethod
+    def _read_redirect(redirect):
+        if redirect is None:
+            return None
+        path, offset = redirect
+        try:
+            with open(path, "rb") as stream:
+                stream.seek(offset)
+                return stream.read()
+        except OSError:
+            return None
 
     def __getattr__(self, name):
         return getattr(self._real_popen, name)

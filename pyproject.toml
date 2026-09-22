@@ -19,7 +19,7 @@ Homepage = "https://github.com/jonsim/robot-trace"
 Repository = "https://github.com/jonsim/robot-trace.git"
 Issues = "https://github.com/jonsim/robot-trace/issues"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = ["robotframework", "pre-commit", "coverage", "build", "twine"]
 
 [build-system]

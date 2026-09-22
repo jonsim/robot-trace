@@ -84,6 +84,8 @@ run_keywords_passing                                                    run_keyw
 run_keywords_passing (verbose)                                          run_keywords_passing                                            mode=verbose
 run_process                                                             run_process
 run_process (verbose)                                                   run_process                                                     mode=verbose
+run_process_redirect                                                    run_process_redirect
+run_process_redirect (verbose)                                          run_process_redirect                                            mode=verbose
 suite_setup_failing                                                     suite_setup_failing
 suite_setup_failing (verbose)                                           suite_setup_failing                                             mode=verbose
 suite_setup_failing_testcase                                            suite_setup_failing_testcase

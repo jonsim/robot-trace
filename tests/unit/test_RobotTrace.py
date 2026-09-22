@@ -1,13 +1,19 @@
 # Unit tests for RobotTrace.py.
 #
 # Copyright (c) 2026 Jonathan Simmonds
+import os
+import subprocess
+import sys
 import unittest
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from robot_trace.RobotTrace import (
     ANSI,
     InterceptStream,
+    PopenWrapper,
     ProgressBox,
     RobotTrace,
     RobotTraceArgs,
@@ -488,6 +494,32 @@ class TestInterceptStream(unittest.TestCase):
 
         stream = InterceptStream(DummyStream(), lambda x: None)
         self.assertEqual(stream.dummy_method(), "dummy")
+
+
+class TestPopenWrapper(unittest.TestCase):
+    def test_redirected_stdout_is_traced_and_written(self):
+        stdout_messages = []
+        stderr_messages = []
+        popen = PopenWrapper(
+            subprocess.Popen, stdout_messages.append, stderr_messages.append
+        )
+
+        with TemporaryDirectory() as tempdir:
+            with open(Path(tempdir) / "gonzo.txt", "w+b") as redirected_stdout:
+                process = popen(
+                    [sys.executable, "-c", "print('Hello from Gonzo')"],
+                    stdout=redirected_stdout,
+                    stderr=subprocess.STDOUT,
+                )
+                output = process.communicate()
+                redirected_stdout.seek(0)
+
+                self.assertEqual((None, None), output)
+                expected = f"Hello from Gonzo{os.linesep}"
+                self.assertEqual(expected.encode(), redirected_stdout.read())
+
+        self.assertEqual([expected], stdout_messages)
+        self.assertEqual([], stderr_messages)
 
 
 class TestProgressBox(unittest.TestCase):

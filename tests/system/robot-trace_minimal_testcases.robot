@@ -116,6 +116,9 @@ run_keywords_passing (buffered)                                             run_
 run_process                                                                 run_process                                                     --tracesubprocesses
 run_process (verbose)                                                       run_process                                                     --tracesubprocesses     mode=verbose
 run_process (buffered)                                                      run_process                                                     --tracesubprocesses     mode=buffered
+run_process_redirect                                                        run_process_redirect                                            --tracesubprocesses
+run_process_redirect (verbose)                                              run_process_redirect                                            --tracesubprocesses     mode=verbose
+run_process_redirect (buffered)                                             run_process_redirect                                            --tracesubprocesses     mode=buffered
 suite_setup_failing                                                         suite_setup_failing
 suite_setup_failing (verbose)                                               suite_setup_failing                                             mode=verbose
 suite_setup_failing (buffered)                                              suite_setup_failing                                             mode=buffered
