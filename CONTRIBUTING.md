@@ -71,18 +71,20 @@ robot tests/system
 
 ## Releasing
 
-To release a new version of the project, follow these steps:
+Releases are built and published automatically by GitHub Actions when a `v*`
+tag is pushed. The workflow tests and builds the project on Linux, macOS, and
+Windows before creating the release.
 
 ### 1. Update the version number
 Update the version number in:
 - `pyproject.toml`
-- `src/rebot_trace/__init__.py`
-- `src/robot_trace/__init__.py`
-- `src/pabot_trace/__init__.py`
+- `rebot_trace/__init__.py`
+- `robot_trace/__init__.py`
+- `pabot_trace/__init__.py`
 
 ### 2. Commit the version change
 ```sh
-git add pyproject.toml src/rebot_trace/__init__.py src/robot_trace/__init__.py src/pabot_trace/__init__.py
+git add pyproject.toml rebot_trace/__init__.py robot_trace/__init__.py pabot_trace/__init__.py
 git commit -m "Bump version to X.Y.Z"
 ```
 
@@ -92,8 +94,6 @@ git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-### 4. Publish to PyPI
-```sh
-python -m build
-python -m twine upload dist/*
-```
+The tag version must match the version in `pyproject.toml`. After all tests
+pass, the workflow creates a GitHub release containing the wheel and source
+distribution and publishes both to PyPI.
