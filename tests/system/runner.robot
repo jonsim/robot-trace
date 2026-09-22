@@ -20,5 +20,6 @@ Errors are reported correctly
     ...    --log         NONE
     ...    --invalidargumentname
     ...    expected_rc=252
-    Should Be Equal    ${expected_stderr}    ${res.stderr}
+    ${normalized_stderr} =    Normalize Output    ${res.stderr}
+    Should Be Equal    ${expected_stderr}    ${normalized_stderr}
     Should Be Equal    ${EMPTY}     ${res.stdout}

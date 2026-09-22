@@ -15,6 +15,10 @@ jobs:
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      # Windows otherwise uses CP1252 for piped child-process output, which
+      # cannot represent the Unicode symbols emitted by robot-trace.
+      PYTHONUTF8: "1"
     strategy:
       fail-fast: false
       matrix:

@@ -42,8 +42,12 @@ Set Robot Version
 
 Normalize Output
     [Documentation]    Replaces non-deterministic parts of the output (like elapsed times)
-    ...    with a fixed placeholder to make the output comparison robust.
+    ...    and platform-specific line endings with fixed values to make the
+    ...    output comparison robust.
     [Arguments]    ${output}
+    # Process output uses CRLF on Windows, while the expected trace files use LF.
+    ${output} =    Evaluate
+    ...    $output.replace(chr(13) + chr(10), chr(10)).replace(chr(13), "")
     # Normalize keyword elapsed times (e.g., "  ✓ PASS     0s")
     # We use 4 spaces to match the output format of RobotTrace.py
     ${output} =    Replace String Using Regexp    ${output}
