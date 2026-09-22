@@ -7,12 +7,18 @@ authors = [{ name = "Jonathan Simmonds", email = "jon@jonsim.com" }]
 keywords = ["robotframework", "listener", "cli", "trace"]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python"
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 license = "MIT"
 license-files = ["LICENSE"]
 dependencies = []
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 
 [project.urls]
 Homepage = "https://github.com/jonsim/robot-trace"

@@ -5,7 +5,7 @@
 To build and run the project locally, follow these steps:
 
 ### 1. Prerequisites
-- Python 3.6+
+- Python 3.10+
 - pip 26.0+
 
 ### 2. Setup a virtual environment

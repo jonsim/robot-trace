@@ -1,8 +1,8 @@
 # Alternative RobotFramework CLI Frontend
 
 [![CI and release](https://github.com/jonsim/robot-trace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jonsim/robot-trace/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/robotframework-trace.svg)](https://pypi.org/project/robotframework-trace/)
-[![Python versions](https://img.shields.io/pypi/pyversions/robotframework-trace.svg)](https://pypi.org/project/robotframework-trace/)
+[![PyPI version](https://img.shields.io/pypi/v/robotframework-trace.svg?cacheSeconds=300)](https://pypi.org/project/robotframework-trace/)
+[![Python versions](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/robotframework-trace/)
 
 A lightweight Robot Framework CLI Frontend that provides real-time progress
 updates directly on the command-line during test execution. The main design
